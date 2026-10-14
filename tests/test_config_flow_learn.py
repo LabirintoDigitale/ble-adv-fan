@@ -21,6 +21,7 @@ from .conftest import MockEspProxy, create_base_entry
 NOISE = BleAdvAdvertisement(0xFF, b"\xf0\x09noise_beacon", 0x1A)
 KEY = BleAdvAdvertisement(0xFF, b"\xf0\x08remote_key1", 0x1A)
 OTHER = BleAdvAdvertisement(0xFF, b"\xf0\x08remote_oth1", 0x1A)
+THIRD = BleAdvAdvertisement(0xFF, b"\xf0\x08remote_thr1", 0x1A)
 
 
 async def _wait_done(step: Callable[[], Awaitable[ConfigFlowResult]], max_loops: int = 100) -> ConfigFlowResult:
@@ -56,7 +57,8 @@ async def test_learn_progress(hass: HomeAssistant, coord: BleAdvCoordinator) -> 
         await coord.handle_raw_adv("esp/test", "BB:BB:BB:BB:BB:01", KEY.to_raw())
     await coord.handle_raw_adv("esp/test", "AA:AA:AA:AA:AA:01", OTHER.to_raw())  # MAC seen as noise
     await coord.handle_raw_adv("esp/test", "BB:BB:BB:BB:BB:02", NOISE.to_raw())  # ADV seen as noise
-    await coord.handle_raw_adv("esp/test", "BB:BB:BB:BB:BB:03", OTHER.to_raw())
+    await coord.handle_raw_adv("esp/test", "BB:BB:BB:BB:BB:03", OTHER.to_raw())  # ADV seen as noise
+    await coord.handle_raw_adv("esp/test", "BB:BB:BB:BB:BB:03", THIRD.to_raw())
     with mock.patch("ble_adv_fan.config_flow.LEARN_END_SILENCE", timedelta(seconds=0.1)):
         start = datetime.now()
         res = progress.next()
@@ -67,7 +69,7 @@ async def test_learn_progress(hass: HomeAssistant, coord: BleAdvCoordinator) -> 
     assert (datetime.now() - start) < timedelta(seconds=2)
     progress.stop()
     cands = progress.candidates()
-    assert [(cand.raw, cand.count) for cand in cands] == [(KEY.to_raw(), 3), (OTHER.to_raw(), 1)]
+    assert [(cand.raw, cand.count) for cand in cands] == [(KEY.to_raw(), 3), (THIRD.to_raw(), 1)]
 
 
 async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> None:
