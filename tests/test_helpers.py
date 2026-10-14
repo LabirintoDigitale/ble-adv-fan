@@ -3,7 +3,7 @@
 # ruff: noqa: S101
 import pytest
 import voluptuous as vol
-from ble_adv.helpers import ENC_CMD_PARAMS, get_device_from_id
+from ble_adv_fan.helpers import ENC_CMD_PARAMS, get_device_from_id
 from homeassistant.core import HomeAssistant
 
 from .conftest import create_base_entry, get_device_entry_from_entry

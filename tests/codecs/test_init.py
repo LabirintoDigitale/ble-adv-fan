@@ -1,7 +1,7 @@
 """Test global init and codec consistency."""
 
 # ruff: noqa: S101
-from ble_adv.codecs import PHONE_APPS, get_codec_list
+from ble_adv_fan.codecs import PHONE_APPS, get_codec_list
 
 
 def test_codec_unique_id() -> None:

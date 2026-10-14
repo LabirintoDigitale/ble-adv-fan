@@ -2,7 +2,7 @@
 
 from homeassistant.const import Platform
 
-DOMAIN = "ble_adv"
+DOMAIN = "ble_adv_fan"
 PLATFORMS = [Platform.LIGHT, Platform.FAN, Platform.EVENT, Platform.SWITCH]
 
 EVENT_TYPE = "event"

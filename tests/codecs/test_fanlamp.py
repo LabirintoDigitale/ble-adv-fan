@@ -5,7 +5,7 @@
 from copy import copy
 
 import pytest
-from ble_adv.codecs.models import BleAdvAdvertisement, BleAdvCodec, BleAdvEncCmd
+from ble_adv_fan.codecs.models import BleAdvAdvertisement, BleAdvCodec, BleAdvEncCmd
 
 from . import CODECS, _TestEncoderBase, _TestEncoderBaseParams, _TestEncoderFull, _TestEncoderFullAll
 

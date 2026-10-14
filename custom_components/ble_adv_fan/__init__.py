@@ -1,4 +1,4 @@
-"ble_adv package."
+"ble_adv_fan package."
 
 import logging
 

@@ -5,10 +5,10 @@ import asyncio
 from datetime import datetime
 from unittest import mock
 
-from ble_adv.adapters import BleAdvQueueItem
-from ble_adv.codecs.models import BleAdvAdvertisement, BleAdvCodec, BleAdvConfig, BleAdvEncCmd
-from ble_adv.const import CONF_ADAPTER_ID, CONF_DEVICE_QUEUE, CONF_DURATION, CONF_INTERVAL, CONF_RAW, CONF_REPEAT
-from ble_adv.coordinator import BleAdvBaseDevice, BleAdvCoordinator, BleAdvRecvItem
+from ble_adv_fan.adapters import BleAdvQueueItem
+from ble_adv_fan.codecs.models import BleAdvAdvertisement, BleAdvCodec, BleAdvConfig, BleAdvEncCmd
+from ble_adv_fan.const import CONF_ADAPTER_ID, CONF_DEVICE_QUEUE, CONF_DURATION, CONF_INTERVAL, CONF_RAW, CONF_REPEAT
+from ble_adv_fan.coordinator import BleAdvBaseDevice, BleAdvCoordinator, BleAdvRecvItem
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import Manifest
 
@@ -228,11 +228,11 @@ async def test_full_diagnostics(coord: BleAdvCoordinator) -> None:
     """Test Full Diagnostics."""
 
     class _MockIntegration:
-        manifest = Manifest({"domain": "ble_adv", "version": "1.0"})
+        manifest = Manifest({"domain": "ble_adv_fan", "version": "1.0"})
 
     async def _mock_async_get_integration(_: HomeAssistant, __: str) -> _MockIntegration:
         return _MockIntegration()
 
-    with mock.patch("ble_adv.coordinator.async_get_integration", side_effect=_mock_async_get_integration):
+    with mock.patch("ble_adv_fan.coordinator.async_get_integration", side_effect=_mock_async_get_integration):
         diag = await coord.full_diagnostic_dump()
         assert len(diag["coordinator"]) > 0

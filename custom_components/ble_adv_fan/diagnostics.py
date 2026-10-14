@@ -1,4 +1,4 @@
-"ble_adv Diagnostics."
+"ble_adv_fan Diagnostics."
 
 from typing import Any
 

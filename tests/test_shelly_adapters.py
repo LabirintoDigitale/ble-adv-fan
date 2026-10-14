@@ -5,8 +5,8 @@ import asyncio
 import binascii
 from unittest import mock
 
-from ble_adv.adapters import BleAdvQueueItem
-from ble_adv.shelly_adapters import BleAdvShellyBtManager, _MonitoredDevice
+from ble_adv_fan.adapters import BleAdvQueueItem
+from ble_adv_fan.shelly_adapters import BleAdvShellyBtManager, _MonitoredDevice
 from homeassistant.core import HomeAssistant
 
 from .conftest import MockShellyEntry

@@ -3,10 +3,10 @@
 # ruff: noqa: S101
 from unittest import mock
 
-from ble_adv.codecs.const import ATTR_DIR, ATTR_ON, ATTR_OSC, ATTR_PRESET, ATTR_SPEED, ATTR_SPEED_COUNT, FAN_TYPE
-from ble_adv.codecs.models import BleAdvEntAttr
-from ble_adv.const import CONF_FANS, CONF_PRESETS, CONF_REFRESH_DIR_ON_START, CONF_REFRESH_OSC_ON_START, CONF_USE_DIR, CONF_USE_OSC
-from ble_adv.fan import BleAdvFan, async_setup_entry, create_entity
+from ble_adv_fan.codecs.const import ATTR_DIR, ATTR_ON, ATTR_OSC, ATTR_PRESET, ATTR_SPEED, ATTR_SPEED_COUNT, FAN_TYPE
+from ble_adv_fan.codecs.models import BleAdvEntAttr
+from ble_adv_fan.const import CONF_FANS, CONF_PRESETS, CONF_REFRESH_DIR_ON_START, CONF_REFRESH_OSC_ON_START, CONF_USE_DIR, CONF_USE_OSC
+from ble_adv_fan.fan import BleAdvFan, async_setup_entry, create_entity
 from homeassistant.components.fan import DIRECTION_FORWARD, DIRECTION_REVERSE, FanEntityFeature
 from homeassistant.const import CONF_TYPE
 from homeassistant.core import HomeAssistant

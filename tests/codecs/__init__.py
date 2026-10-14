@@ -3,8 +3,8 @@
 
 from typing import Any
 
-from ble_adv.codecs import dyn_codec_params, get_codecs
-from ble_adv.codecs.models import BleAdvAdvertisement, BleAdvCodec
+from ble_adv_fan.codecs import dyn_codec_params, get_codecs
+from ble_adv_fan.codecs.models import BleAdvAdvertisement, BleAdvCodec
 
 CODECS: dict[str, BleAdvCodec] = get_codecs()
 # Disable tx_count bump by codecs

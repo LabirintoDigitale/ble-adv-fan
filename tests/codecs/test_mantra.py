@@ -3,7 +3,7 @@
 # ruff: noqa: S101
 
 import pytest
-from ble_adv.codecs.models import BleAdvAdvertisement, BleAdvCodec
+from ble_adv_fan.codecs.models import BleAdvAdvertisement, BleAdvCodec
 
 from . import CODECS, _TestEncoderBase, _TestEncoderFull, _TestEncoderFullAll
 

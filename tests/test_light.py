@@ -3,7 +3,7 @@
 # ruff: noqa: S101
 from unittest import mock
 
-from ble_adv.codecs.const import (
+from ble_adv_fan.codecs.const import (
     ATTR_BLUE,
     ATTR_BLUE_F,
     ATTR_BR,
@@ -29,9 +29,9 @@ from ble_adv.codecs.const import (
     LIGHT_TYPE_ONOFF,
     LIGHT_TYPE_RGB,
 )
-from ble_adv.codecs.models import BleAdvEntAttr
-from ble_adv.const import CONF_EFFECTS, CONF_LIGHTS, CONF_REVERSED
-from ble_adv.light import async_setup_entry, create_entity
+from ble_adv_fan.codecs.models import BleAdvEntAttr
+from ble_adv_fan.const import CONF_EFFECTS, CONF_LIGHTS, CONF_REVERSED
+from ble_adv_fan.light import async_setup_entry, create_entity
 from homeassistant.components.light.const import ColorMode, LightEntityFeature
 from homeassistant.const import CONF_TYPE
 from homeassistant.core import HomeAssistant

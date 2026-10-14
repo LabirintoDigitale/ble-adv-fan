@@ -9,18 +9,18 @@ import voluptuous as vol
 from aioshelly.ble.const import BLE_SCAN_RESULT_EVENT, BLE_SCRIPT_NAME
 from aioshelly.rpc_device import RpcDevice
 from aioshelly.rpc_device.models import ShellyScript
-from ble_adv import BleAdvConfigEntry, async_setup, get_coordinator
-from ble_adv.codecs.models import BleAdvEntAttr
-from ble_adv.const import CONF_LAST_VERSION, DOMAIN
-from ble_adv.coordinator import BleAdvCoordinator
-from ble_adv.device import BleAdvEntity
-from ble_adv.esp_adapters import (
+from ble_adv_fan import BleAdvConfigEntry, async_setup, get_coordinator
+from ble_adv_fan.codecs.models import BleAdvEntAttr
+from ble_adv_fan.const import CONF_LAST_VERSION, DOMAIN
+from ble_adv_fan.coordinator import BleAdvCoordinator
+from ble_adv_fan.device import BleAdvEntity
+from ble_adv_fan.esp_adapters import (
     CONF_ATTR_DEVICE_ID,
     CONF_ATTR_IGN_DURATION,
     CONF_ATTR_RAW,
     ESPHOME_BLE_ADV_RECV_EVENT,
 )
-from ble_adv.shelly_adapters import SHELLY_DOMAIN
+from ble_adv_fan.shelly_adapters import SHELLY_DOMAIN
 from homeassistant.components.shelly.coordinator import ShellyRpcCoordinator
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE

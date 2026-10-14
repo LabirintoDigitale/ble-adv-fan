@@ -1,11 +1,11 @@
-"""ble_adv component init tests."""
+"""ble_adv_fan component init tests."""
 
 # ruff: noqa: S101
 from unittest import mock
 
 import pytest
-from ble_adv import async_migrate_entry, async_setup, async_setup_entry, async_unload_entry
-from ble_adv.const import (
+from ble_adv_fan import async_migrate_entry, async_setup, async_setup_entry, async_unload_entry
+from ble_adv_fan.const import (
     CONF_ADAPTER_ID,
     CONF_ADAPTER_IDS,
     CONF_CODEC_ID,
@@ -29,7 +29,7 @@ from ble_adv.const import (
     CONF_USE_DIR,
     DOMAIN,
 )
-from ble_adv.coordinator import BleAdvCoordinator
+from ble_adv_fan.coordinator import BleAdvCoordinator
 from homeassistant.const import CONF_DEVICE, CONF_NAME
 from homeassistant.core import HomeAssistant
 

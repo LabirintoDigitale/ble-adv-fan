@@ -6,8 +6,8 @@ from collections.abc import AsyncGenerator
 from unittest import mock
 
 import pytest
-from ble_adv.adapters import BleAdvAdapter, BleAdvBtHciManager, BluetoothHCIAdapter
-from ble_adv.async_socket import AsyncSocketBase
+from ble_adv_fan.adapters import BleAdvAdapter, BleAdvBtHciManager, BluetoothHCIAdapter
+from ble_adv_fan.async_socket import AsyncSocketBase
 
 
 class _AsyncSocketMock(AsyncSocketBase):
@@ -94,7 +94,7 @@ async def bt_manager() -> AsyncGenerator[BleAdvBtHciManager]:
         mocks.append(amock)
         return amock
 
-    with mock.patch("ble_adv.adapters.create_async_socket", side_effect=create_mock_socket):
+    with mock.patch("ble_adv_fan.adapters.create_async_socket", side_effect=create_mock_socket):
         btmgt = BleAdvBtHciManager(mock.AsyncMock(), mock.AsyncMock(), [])
         BleAdvAdapter.MAX_ADV_WAIT = 0.2
         BluetoothHCIAdapter.CMD_RTO = 0.1

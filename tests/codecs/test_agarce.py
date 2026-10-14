@@ -2,8 +2,8 @@
 
 # ruff: noqa: S101
 import pytest
-from ble_adv.codecs.agarce import TRANS, AgarceEncoder
-from ble_adv.codecs.const import (
+from ble_adv_fan.codecs.agarce import TRANS, AgarceEncoder
+from ble_adv_fan.codecs.const import (
     ATTR_ON,
     ATTR_PRESET,
     ATTR_PRESET_BREEZE,
@@ -14,7 +14,7 @@ from ble_adv.codecs.const import (
     LIGHT_TYPE_CWW,
     LIGHT_TYPE_ONOFF,
 )
-from ble_adv.codecs.models import BleAdvCodec
+from ble_adv_fan.codecs.models import BleAdvCodec
 
 from . import _TestEncoderBase, _TestEncoderFull
 

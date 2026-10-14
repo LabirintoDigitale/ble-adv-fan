@@ -3,7 +3,7 @@
 # ruff: noqa: S101
 from copy import copy
 
-from ble_adv.codecs.const import (
+from ble_adv_fan.codecs.const import (
     ATTR_BLUE,
     ATTR_BLUE_F,
     ATTR_BR,
@@ -34,7 +34,7 @@ from ble_adv.codecs.const import (
     LIGHT_TYPE_ONOFF,
     LIGHT_TYPE_RGB,
 )
-from ble_adv.codecs.models import (
+from ble_adv_fan.codecs.models import (
     BleAdvAdvertisement,
     BleAdvCodec,
     BleAdvConfig,

@@ -1,7 +1,9 @@
-# <img width="64" height="64" alt="icon@2x" src="https://github.com/user-attachments/assets/29025370-fa25-41a1-ad18-5ca567dbf120" />  Home Assistant BLE ADV Ceiling Fan / Lamps
+# <img width="64" height="64" alt="icon@2x" src="https://github.com/user-attachments/assets/29025370-fa25-41a1-ad18-5ca567dbf120" />  Home Assistant BLE ADV Fan
 
-[![GitHub release](https://img.shields.io/github/v/release/NicoIIT/ha-ble-adv.svg)](https://github.com/NicoIIT/ha-ble-adv/releases/)
-![Usage](https://img.shields.io/badge/dynamic/json?color=9932CC&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ble_adv.total)
+> **BLE ADV Fan** è un'integrazione di [LabirintoDigitale](https://github.com/LabirintoDigitale) basata su [NicoIIT/ha-ble-adv](https://github.com/NicoIIT/ha-ble-adv) (licenza MIT, grazie a NicoIIT). Usa il dominio `ble_adv_fan`, quindi può essere installata accanto all'integrazione originale `ble_adv`.
+
+[![GitHub release](https://img.shields.io/github/v/release/LabirintoDigitale/ble-adv-fan.svg)](https://github.com/LabirintoDigitale/ble-adv-fan/releases/)
+![Usage](https://img.shields.io/badge/dynamic/json?color=9932CC&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ble_adv_fan.total)
 
 Home Assistant Custom Integration to control Ceiling Fan / Lamp Devices from various Brands using _non standard_ **_BLE Raw Advertising_** as communication method. Please note this component will **_never_** support standard BLE GATT protocol as it is not its purpose.
 
@@ -56,12 +58,12 @@ If your remote is not recognized by the integration then you can check if it cou
 ## Installing the component
 Download and install directly through [HACS (Home Assistant Community Store)](https://www.hacs.xyz/) following the [my-link](https://my.home-assistant.io/) link:
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=NicoIIT&repository=ha-ble-adv)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=LabirintoDigitale&repository=ble-adv-fan)
 
 Once the repository is added, you need to restart Home Assistant so that it could be taken into account.
 
 ## Adding Integrations
-Once the component is installed, you can now [add](https://www.home-assistant.io/getting-started/integration/) a **"BLE ADV Ceiling Fan / Lamps"** integration for each of the Devices you want to control.
+Once the component is installed, you can now [add](https://www.home-assistant.io/getting-started/integration/) a **"BLE ADV Fan"** integration for each of the Devices you want to control.
 
 The configuration flow will listen to the commands emitted by your phone / physical remote and/or try to control your device (make the lamp blink) so you have to be **located in the same room than the device** in order to be sure:
 * a bluetooth adapter is able to listen to the commands from where they will be used.

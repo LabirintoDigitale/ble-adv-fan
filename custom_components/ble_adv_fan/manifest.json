@@ -1,18 +1,18 @@
 {
-  "domain": "ble_adv",
-  "name": "BLE ADV Ceiling Fan / Lamps",
+  "domain": "ble_adv_fan",
+  "name": "BLE ADV Fan",
   "after_dependencies": [
     "esphome",
     "shelly"
   ],
   "codeowners": [
-    "@NicoIIT"
+    "@LabirintoDigitale"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/NicoIIT/ha-ble-adv",
+  "documentation": "https://github.com/LabirintoDigitale/ble-adv-fan",
   "integration_type": "device",
   "iot_class": "assumed_state",
-  "issue_tracker": "https://github.com/NicoIIT/ha-ble-adv/issues",
+  "issue_tracker": "https://github.com/LabirintoDigitale/ble-adv-fan/issues",
   "requirements": [
     "pycryptodome",
     "btsocket",

@@ -3,7 +3,7 @@
 # ruff: noqa: S101
 from unittest import mock
 
-from ble_adv.esp_adapters import BleAdvEspBtManager
+from ble_adv_fan.esp_adapters import BleAdvEspBtManager
 from homeassistant.core import HomeAssistant
 
 from tests.conftest import MockEspProxy

@@ -13,9 +13,9 @@ homeassistant:
 logger:
   default: info
   logs:
-    custom_components.ble_adv: debug
+    custom_components.ble_adv_fan: debug
 
-ble_adv:
+ble_adv_fan:
   ignored_duration: 60000
   maintainer_menus: true
   # ignored_macs:

@@ -2,7 +2,7 @@
 """Hxlight Unit Tests."""
 
 import pytest
-from ble_adv.codecs.models import BleAdvEntAttr
+from ble_adv_fan.codecs.models import BleAdvEntAttr
 
 from . import CODECS, _TestEncoderBase, _TestEncoderFull, _TestEncoderFullAll
 

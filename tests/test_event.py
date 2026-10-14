@@ -2,7 +2,7 @@
 
 from unittest import mock
 
-from ble_adv.event import async_setup_entry
+from ble_adv_fan.event import async_setup_entry
 from homeassistant.core import HomeAssistant
 
 from .conftest import create_base_entry

@@ -4,8 +4,8 @@
 from unittest import mock
 
 import pytest
-from ble_adv.const import CONF_APPLE_INC_UUIDS, CONF_GOOGLE_LCC_UUIDS
-from ble_adv.diagnostics import async_get_config_entry_diagnostics
+from ble_adv_fan.const import CONF_APPLE_INC_UUIDS, CONF_GOOGLE_LCC_UUIDS
+from ble_adv_fan.diagnostics import async_get_config_entry_diagnostics
 from homeassistant.core import HomeAssistant
 
 

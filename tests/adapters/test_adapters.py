@@ -5,7 +5,7 @@ import asyncio
 from unittest import mock
 
 import pytest
-from ble_adv.adapters import AdapterError, BleAdvAdapterAdvItem, BleAdvBtHciManager, BleAdvQueueItem, BluetoothHCIAdapter
+from ble_adv_fan.adapters import AdapterError, BleAdvAdapterAdvItem, BleAdvBtHciManager, BleAdvQueueItem, BluetoothHCIAdapter
 
 from .conftest import _AsyncSocketMock
 

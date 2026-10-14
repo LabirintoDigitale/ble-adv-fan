@@ -5,12 +5,12 @@ import asyncio
 from typing import Any
 from unittest import mock
 
-from ble_adv.adapters import BleAdvQueueItem
-from ble_adv.codecs.const import ATTR_CMD, ATTR_CMD_PAIR, ATTR_CMD_TIMER, ATTR_CMD_TOGGLE, ATTR_ON, ATTR_SUB_TYPE, ATTR_TIME, DEVICE_TYPE
-from ble_adv.codecs.models import BleAdvAdvertisement, BleAdvConfig, BleAdvEncCmd, BleAdvEntAttr
-from ble_adv.const import CONF_FORCED_OFF, CONF_FORCED_ON, SILENT_SWITCH_TYPE
-from ble_adv.coordinator import BleAdvCoordinator
-from ble_adv.device import ATTR_AVAILABLE, ATTR_IS_ON, BleAdvDevice, BleAdvEntity, BleAdvEvent, BleAdvStateAttribute, BleAdvSwitch
+from ble_adv_fan.adapters import BleAdvQueueItem
+from ble_adv_fan.codecs.const import ATTR_CMD, ATTR_CMD_PAIR, ATTR_CMD_TIMER, ATTR_CMD_TOGGLE, ATTR_ON, ATTR_SUB_TYPE, ATTR_TIME, DEVICE_TYPE
+from ble_adv_fan.codecs.models import BleAdvAdvertisement, BleAdvConfig, BleAdvEncCmd, BleAdvEntAttr
+from ble_adv_fan.const import CONF_FORCED_OFF, CONF_FORCED_ON, SILENT_SWITCH_TYPE
+from ble_adv_fan.coordinator import BleAdvCoordinator
+from ble_adv_fan.device import ATTR_AVAILABLE, ATTR_IS_ON, BleAdvDevice, BleAdvEntity, BleAdvEvent, BleAdvStateAttribute, BleAdvSwitch
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, State
 
@@ -58,7 +58,7 @@ async def test_device(hass: HomeAssistant, coord: BleAdvCoordinator) -> None:
     conf = BleAdvConfig(0xABCDEF, 1)
     device = BleAdvDevice(hass, "my_device", "device", codec.codec_id, ["my_adapter"], 1, 20, 100, conf, coord)
     assert device.device_info == {
-        "identifiers": {("ble_adv", "my_device")},
+        "identifiers": {("ble_adv_fan", "my_device")},
         "name": "device",
         "hw_version": "my_adapter",
         "model": codec.codec_id,
@@ -154,7 +154,7 @@ async def test_entity(device: _Device) -> None:
     ent.set_state_attribute(ATTR_STB, "VALB")
     assert ent.stb == "VALB"
     assert ent.extra_state_attributes == {"last_is_on": False, "last_sta": "VALA", "last_stb": "VALB"}
-    last_state = State("ble_adv.my_ent", STATE_ON, {ATTR_IS_ON: True, ATTR_STA: "SAVA", ATTR_STB: "SAVB"})
+    last_state = State("ble_adv_fan.my_ent", STATE_ON, {ATTR_IS_ON: True, ATTR_STA: "SAVA", ATTR_STB: "SAVB"})
     ent.async_get_last_state = mock.AsyncMock(return_value=last_state)
     await ent.async_added_to_hass()
     assert ent.sta == "SAVA"
