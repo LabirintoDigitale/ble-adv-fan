@@ -79,6 +79,26 @@ The main steps of the configuration flow are the following:
 * **Finalization**: Specify the name of the Device and save your changes.
 
 
+## Telecomando universale BLE (solo BLE ADV Fan)
+Impara i tasti di **qualsiasi** telecomando o app che usa BLE Advertising, anche se il suo protocollo non è supportato:
+
+1. Aggiungi l'integrazione **BLE ADV Fan** e scegli **Telecomando universale BLE**, dai un nome al telecomando e scegli gli adattatori.
+2. Per ogni tasto: dai un nome, premi **Invia**, **non premere nulla per 3 secondi** (analisi del rumore Bluetooth di fondo), poi premi più volte il tasto sul telecomando.
+3. Scegli il segnale catturato (di solito il primo), verifica che il dispositivo reagisca alla ritrasmissione e salva.
+
+Per ogni telecomando vengono creati:
+* un'entità **pulsante** per ogni tasto, che ritrasmette il segnale appreso;
+* un'entità **evento** "Tasto ricevuto", che scatta quando usi il telecomando originale (utile nelle automazioni).
+
+I tasti si aggiungono o eliminano in seguito con **Riconfigura**.
+
+Limiti: funziona solo con dispositivi controllati via BLE Advertising (non con quelli che richiedono una connessione Bluetooth). I telecomandi con codice variabile (rolling code) possono rifiutare un segnale ripetuto. Con un proxy ESPHome, lo stesso segnale ripetuto entro `ignored_duration` (60 s di default) può non essere inoltrato a Home Assistant: aspetta un minuto tra due catture dello stesso tasto.
+
+## Dispositivi Bluetooth presenti da almeno 1 ora (solo BLE ADV Fan)
+In **Aggiungi integrazione → BLE ADV Fan → Strumenti → Dispositivi Bluetooth presenti da almeno 1 ora** trovi l'elenco dei dispositivi Bluetooth visti senza interruzioni da almeno un'ora (MAC, nome, RSSI, da quanto tempo, da quale adattatore). Un dispositivo non visto per 10 minuti è considerato andato via. I dispositivi che cambiano indirizzo di continuo, come i telefoni, quindi non compaiono.
+
+I dati arrivano dagli adattatori BLE ADV e, se presente, dall'integrazione Bluetooth di Home Assistant. Il monitoraggio parte all'avvio di Home Assistant: dopo un riavvio serve un'ora prima che i dispositivi compaiano.
+
 ## Future Developments
 Future developments are tracked in [github feature requests](https://github.com/NicoIIT/ha-ble-adv/issues?q=is%3Aissue%20state%3Aopen%20label%3Aenhancement), do not hesitate to vote for them if you need them giving it a :thumbsup:, or open new ones!
 
