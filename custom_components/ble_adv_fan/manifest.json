@@ -2,6 +2,7 @@
   "domain": "ble_adv_fan",
   "name": "BLE ADV Fan",
   "after_dependencies": [
+    "bluetooth",
     "esphome",
     "shelly"
   ],

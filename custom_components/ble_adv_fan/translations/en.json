@@ -7,6 +7,7 @@
         "menu_options": {
           "wait_config": "Duplicate Paired Phone App config (Recommended)",
           "pair": "Pairing",
+          "learn_remote": "Universal BLE Remote (learn the keys of any remote)",
           "tools": "Tools and Helpers"
         }
       },
@@ -25,7 +26,8 @@
           "manual": "Manual Input (Expert)",
           "inject": "Inject Raw",
           "listen_raw": "Listen to BLE ADV",
-          "decode_raw": "Decode Raw BLE ADV"
+          "decode_raw": "Decode Raw BLE ADV",
+          "bt_devices": "Bluetooth devices present for at least 1 hour"
         }
       },
       "diag": {
@@ -290,6 +292,76 @@
         "data": {
           "name": "Device name"
         }
+      },
+      "bt_devices": {
+        "title": "Bluetooth devices present for at least 1 hour",
+        "description": "**{count}** devices seen continuously for at least 1 hour (a device not seen for 10 minutes is considered gone).\n\nMonitoring since {since} ({monitoring}), {tracked} devices currently tracked. HA Bluetooth integration followed: {ha_bt}\n\n{table}",
+        "menu_options": {
+          "bt_devices": "Refresh",
+          "tools": "Back to Tools"
+        }
+      },
+      "learn_remote": {
+        "title": "Universal BLE Remote",
+        "description": "Learn the keys of a remote using BLE Advertising: each key becomes a button in Home Assistant, and an event is triggered when the original remote is used.\n\nWorks only with remotes / apps sending BLE Advertising (not with devices that need a Bluetooth connection). Remotes using a rolling code may refuse a replayed key.",
+        "data": {
+          "name": "Remote name",
+          "adapter_ids": "BLE ADV Adapter(s)"
+        }
+      },
+      "learn_key": {
+        "title": "Learn a key",
+        "description": "Name the key to learn, then press **Submit**: during the first 3s do not press anything (background noise analysis), then press the key on the remote several times.",
+        "data": {
+          "name": "Key name"
+        }
+      },
+      "learn_capture": {
+        "title": "Learning the key"
+      },
+      "learn_none": {
+        "title": "Nothing received",
+        "description": "No new advertisement received for the key '{key}'. Get closer to the adapter and retry.",
+        "menu_options": {
+          "learn_capture_again": "Retry",
+          "learn_menu": "Back"
+        }
+      },
+      "learn_choose": {
+        "title": "Choose the captured advertisement",
+        "description": "Advertisements received while pressing '{key}', most received first (count - protocol - data). The first one is usually the right one.",
+        "data": {
+          "raw": "Advertisement"
+        }
+      },
+      "learn_test": {
+        "title": "Testing the key"
+      },
+      "learn_test_res": {
+        "title": "Did the device react?",
+        "description": "The key '{key}' was just replayed. Did the device react?",
+        "menu_options": {
+          "learn_save": "Yes, save the key",
+          "learn_test": "Replay again",
+          "learn_choose": "No, choose another advertisement",
+          "learn_capture_again": "No, learn the key again"
+        }
+      },
+      "learn_menu": {
+        "title": "Universal BLE Remote",
+        "description": "Learned keys:\n{keys}",
+        "menu_options": {
+          "learn_key": "Learn a new key",
+          "learn_delete": "Delete keys",
+          "learn_finish": "Save the remote",
+          "learn_abort": "Abort"
+        }
+      },
+      "learn_delete": {
+        "title": "Delete keys",
+        "data": {
+          "keys": "Keys to delete"
+        }
       }
     },
     "progress": {
@@ -299,18 +371,24 @@
       "agg_config": "Aggregating configuration data.",
       "test_light": "Making the light blink with configuration {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Index: {index}",
       "test_fan": "Starting / Stopping the Fan with configuration {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Index: {index}",
-      "wait_config_remote": "Please press any button (preferably Pair) on the controller within {max_seconds}s."
+      "wait_config_remote": "Please press any button (preferably Pair) on the controller within {max_seconds}s.",
+      "learn_quiet": "Do NOT press anything: listening to the Bluetooth background noise ({seconds}s)...",
+      "learn_press": "Now press the key '{key}' on the remote several times (up to {seconds}s)...",
+      "learn_test": "Replaying the key '{key}'..."
     },
     "abort": {
       "no_adapters": "No Bluetooth adapter supporting BLE Advertising has been found, Aborting.",
       "no_config": "No configuration has been discovered or tested successfully.",
       "not_implemented": "Not Implemented (yet)",
       "reconfigure_successful": "Reconfigure successful!",
-      "already_configured": "A device with the same (codec / id / index) is already configured.\nMore info in the Troubleshooting Guide - Step 3.3"
+      "already_configured": "A device with the same (codec / id / index) is already configured.\nMore info in the Troubleshooting Guide - Step 3.3",
+      "no_keys": "No key learned."
     },
     "error": {
       "missing_entity": "At least one Fan or Light must be configured.",
-      "missing_adapter": "At least one adapter must be selected."
+      "missing_adapter": "At least one adapter must be selected.",
+      "invalid_key_name": "The key name cannot be empty.",
+      "duplicate_key_name": "A key with this name already exists."
     }
   },
   "selector": {
@@ -371,6 +449,9 @@
     "event": {
       "event": {
         "name": "Encoded Command"
+      },
+      "learned_event": {
+        "name": "Key received"
       }
     },
     "switch": {

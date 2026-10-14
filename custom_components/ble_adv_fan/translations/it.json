@@ -1,0 +1,577 @@
+{
+  "title": "Dispositivi controllati tramite Bluetooth Low Energy Advertising",
+  "config": {
+    "step": {
+      "user": {
+        "description": "Prima di iniziare, assicurati di essere nella stessa stanza del dispositivo che vuoi controllare!",
+        "menu_options": {
+          "wait_config": "Copia la configurazione dell'app già abbinata (consigliato)",
+          "pair": "Abbinamento",
+          "learn_remote": "Telecomando universale BLE (impara i tasti di qualsiasi telecomando)",
+          "tools": "Strumenti"
+        }
+      },
+      "no_adapters": {
+        "description": "Nessun adattatore Bluetooth compatibile con BLE Advertising trovato.\nConsulta la [Guida alla risoluzione dei problemi - Step 1.2]({url}).",
+        "menu_options": {
+          "abort_no_adapters": "Annulla",
+          "open_issue": "Apri una segnalazione"
+        }
+      },
+      "tools": {
+        "title": "Strumenti",
+        "description": "Sezione strumenti",
+        "menu_options": {
+          "diag": "Dump diagnostico",
+          "manual": "Inserimento manuale (esperti)",
+          "inject": "Invia dati grezzi",
+          "listen_raw": "Ascolta BLE ADV",
+          "decode_raw": "Decodifica BLE ADV grezzo",
+          "bt_devices": "Dispositivi Bluetooth presenti da almeno 1 ora"
+        }
+      },
+      "diag": {
+        "title": "Dump diagnostico"
+      },
+      "listen_raw": {
+        "title": "Ascolta BLE ADV"
+      },
+      "listen_raw_res": {
+        "title": "Ascolta BLE ADV",
+        "description": "BLE Advertising ricevuti:\n{advs}",
+        "menu_options": {
+          "listen_raw": "Riprova",
+          "tools": "Torna agli strumenti"
+        }
+      },
+      "inject": {
+        "title": "Invio manuale",
+        "description": "Per utenti esperti: invia dati grezzi",
+        "data": {
+          "adapter_id": "Adattatore BLE ADV",
+          "raw": "Dati grezzi",
+          "interval": "Intervallo",
+          "repeat": "Ripetizioni"
+        }
+      },
+      "inject_res": {
+        "title": "Risultato invio",
+        "description": "Invio effettuato.",
+        "menu_options": {
+          "inject": "Invia altri dati grezzi",
+          "tools": "Torna agli strumenti"
+        }
+      },
+      "decode_raw": {
+        "title": "Decodifica BLE ADV grezzo",
+        "data": {
+          "raw": "Dati grezzi"
+        }
+      },
+      "decode_raw_res": {
+        "title": "Risultato decodifica",
+        "description": "{conf}",
+        "menu_options": {
+          "decode_raw": "Decodifica altri dati",
+          "tools": "Torna agli strumenti"
+        }
+      },
+      "manual": {
+        "title": "Inserimento manuale",
+        "description": "Per utenti esperti, ad esempio per migrare da ESPHome",
+        "data": {
+          "name": "Nome del dispositivo",
+          "codec_id": "Codec",
+          "adapter_id": "Adattatore BLE ADV",
+          "forced_id": "Id forzato",
+          "index": "Indice"
+        }
+      },
+      "wait_config": {
+        "title": "Ascolto della configurazione dall'app abbinata."
+      },
+      "no_config": {
+        "description": "Nessuna configurazione ricevuta entro 10s",
+        "menu_options": {
+          "wait_config": "Riprova",
+          "abort_config": "Annulla",
+          "open_issue": "Apri una segnalazione"
+        }
+      },
+      "test_light": {
+        "title": "Test della configurazione"
+      },
+      "test_fan": {
+        "title": "Test della configurazione"
+      },
+      "pair": {
+        "title": "Abbinamento",
+        "description": "Seleziona l'adattatore Bluetooth e l'app dagli elenchi qui sotto, togli corrente al dispositivo, ridagliela e premi **Invia** entro 5s (verranno inviati i comandi di abbinamento)",
+        "data": {
+          "adapter_id": "Adattatore BLE ADV",
+          "phone_app": "App del telefono"
+        }
+      },
+      "wait_pair": {
+        "title": "Abbinamento"
+      },
+      "confirm_pair": {
+        "description": "L'abbinamento è riuscito? Di solito in quel caso la luce lampeggia, ma dipende dal tipo di lampada...",
+        "menu_options": {
+          "pair": "Abbinamento FALLITO, riprova",
+          "confirm_no_abort": "Abbinamento FALLITO, annulla",
+          "blink": "Abbinamento OK, prova le configurazioni"
+        }
+      },
+      "choose_adapter": {
+        "title": "Scelta dell'adattatore",
+        "description": "Più adattatori Bluetooth hanno ricevuto delle configurazioni: scegli il più vicino al dispositivo",
+        "data": {
+          "adapter_id": "Adattatore BLE ADV"
+        }
+      },
+      "confirm_light": {
+        "title": "Verifica",
+        "description": "Prova della configurazione {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}\n\nLa luce ha lampeggiato?",
+        "menu_options": {
+          "confirm_yes": "Sì!",
+          "confirm_no_another": "No, prova la successiva.",
+          "confirm_no_abort": "No, annulla.",
+          "open_issue": "No, apri una segnalazione",
+          "confirm_retry_last": "Riprova la stessa.",
+          "confirm_retry_all": "Ricomincia dalla prima.",
+          "confirm_test_fan": "Dispositivo senza luce, prova con il ventilatore."
+        }
+      },
+      "confirm_fan": {
+        "title": "Verifica",
+        "description": "Prova della configurazione {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}\n\nIl ventilatore si è acceso / spento?",
+        "menu_options": {
+          "confirm_yes": "Sì!",
+          "confirm_no_another": "No, prova la successiva.",
+          "confirm_no_abort": "No, annulla.",
+          "open_issue": "No, apri una segnalazione",
+          "confirm_retry_last": "Riprova la stessa.",
+          "confirm_retry_all": "Ricomincia dalla prima."
+        }
+      },
+      "open_issue": {
+        "title": "Apri una segnalazione",
+        "description": "1. Scarica il dump diagnostico con il pulsante qui sotto\n2. Apri una [segnalazione]({url}) e allega il dump.",
+        "menu_options": {
+          "diag": "Scarica il dump diagnostico"
+        }
+      },
+      "configure": {
+        "title": "Configurazione",
+        "description": "Configurazione di entità, telecomando fisico e parametri tecnici.\nPotrai modificarli in seguito con 'Riconfigura'.",
+        "menu_options": {
+          "config_entities": "Configura luci / ventilatori",
+          "config_remotes": "Configura un altro controller (telecomando fisico, ...)",
+          "config_technical": "Parametri tecnici",
+          "finalize": "Concludi"
+        }
+      },
+      "config_entities": {
+        "title": "Entità controllate",
+        "description": "Scegli le entità da creare e le loro caratteristiche",
+        "sections": {
+          "light_0": {
+            "name": "Luce principale",
+            "data": {
+              "type": "Tipo",
+              "min_brightness": "Luminosità minima",
+              "refresh_on_start": "Reinvia colore / luminosità all'accensione",
+              "reversed": "Inverti freddo / caldo",
+              "forced_cmds": "Comandi inviati sempre, anche se lo stato non cambia",
+              "effects": "Modalità luce"
+            }
+          },
+          "light_1": {
+            "name": "Seconda luce",
+            "data": {
+              "type": "Tipo",
+              "min_brightness": "Luminosità minima",
+              "refresh_on_start": "Reinvia colore / luminosità all'accensione",
+              "reversed": "Inverti freddo / caldo",
+              "forced_cmds": "Comandi inviati sempre, anche se lo stato non cambia",
+              "effects": "Modalità luce"
+            }
+          },
+          "light_2": {
+            "name": "Terza luce",
+            "data": {
+              "type": "Tipo",
+              "min_brightness": "Luminosità minima",
+              "refresh_on_start": "Reinvia colore / luminosità all'accensione",
+              "reversed": "Inverti freddo / caldo",
+              "forced_cmds": "Comandi inviati sempre, anche se lo stato non cambia",
+              "effects": "Modalità luce"
+            }
+          },
+          "fan_0": {
+            "name": "Ventilatore principale",
+            "data": {
+              "type": "Tipo",
+              "direction": "Supporta la direzione",
+              "oscillating": "Supporta l'oscillazione",
+              "refresh_dir_on_start": "Reinvia la direzione all'accensione",
+              "refresh_osc_on_start": "Reinvia l'oscillazione all'accensione",
+              "forced_cmds": "Comandi inviati sempre, anche se lo stato non cambia",
+              "presets": "Modalità ventilatore"
+            }
+          },
+          "fan_1": {
+            "name": "Secondo ventilatore",
+            "data": {
+              "type": "Tipo",
+              "direction": "Supporta la direzione",
+              "oscillating": "Supporta l'oscillazione",
+              "refresh_dir_on_start": "Reinvia la direzione all'accensione",
+              "refresh_osc_on_start": "Reinvia l'oscillazione all'accensione",
+              "forced_cmds": "Comandi inviati sempre, anche se lo stato non cambia",
+              "presets": "Modalità ventilatore"
+            }
+          },
+          "fan_2": {
+            "name": "Terzo ventilatore",
+            "data": {
+              "type": "Tipo",
+              "direction": "Supporta la direzione",
+              "oscillating": "Supporta l'oscillazione",
+              "refresh_dir_on_start": "Reinvia la direzione all'accensione",
+              "refresh_osc_on_start": "Reinvia l'oscillazione all'accensione",
+              "forced_cmds": "Comandi inviati sempre, anche se lo stato non cambia",
+              "presets": "Modalità ventilatore"
+            }
+          }
+        }
+      },
+      "config_remotes": {
+        "title": "Scegli il controller collegato",
+        "description": "Scegli il controller collegato",
+        "data": {
+          "remote": "Controller collegato"
+        }
+      },
+      "config_remote": {
+        "title": "Configura il controller collegato",
+        "description": "Controller collegato:\n\n    Nome: {name}\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}",
+        "menu_options": {
+          "config_remote_delete": "Elimina il controller collegato",
+          "config_remote_update": "Modifica le opzioni del controller collegato",
+          "configure": "Indietro"
+        }
+      },
+      "wait_config_remote": {
+        "title": "Configura un nuovo controller collegato"
+      },
+      "config_remote_update": {
+        "title": "Opzioni del controller collegato",
+        "description": "Controller collegato:\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}",
+        "data": {
+          "name": "Nome",
+          "paired": "Controlla il dispositivo",
+          "tr_set": "Set di traduzione"
+        }
+      },
+      "config_technical": {
+        "title": "Opzioni tecniche",
+        "description": "Ogni comando viene trasmesso dagli adattatori scelti per 'Ripetizioni' volte, ogni 'Intervallo' (ms), rispettando una pausa di 'Durata minima' tra due comandi diversi.\n\nModifica solo se sai cosa stai facendo!\n\nL'uso di più adattatori è FORTEMENTE SCONSIGLIATO e non è supportato.",
+        "data": {
+          "tr_set": "Set di traduzione",
+          "adapter_ids": "Adattatore/i BLE ADV",
+          "interval": "Intervallo",
+          "repeats": "Ripetizioni",
+          "duration": "Durata minima"
+        }
+      },
+      "finalize": {
+        "title": "Dai un nome al dispositivo",
+        "description": "È l'ultimo passaggio!",
+        "data": {
+          "name": "Nome del dispositivo"
+        }
+      },
+      "bt_devices": {
+        "title": "Dispositivi Bluetooth presenti da almeno 1 ora",
+        "description": "**{count}** dispositivi visti senza interruzioni da almeno 1 ora (un dispositivo non visto per 10 minuti è considerato andato via).\n\nMonitoraggio attivo dal {since} ({monitoring}), {tracked} dispositivi tracciati ora. Integrazione Bluetooth di HA seguita: {ha_bt}\n\n{table}",
+        "menu_options": {
+          "bt_devices": "Aggiorna",
+          "tools": "Torna agli strumenti"
+        }
+      },
+      "learn_remote": {
+        "title": "Telecomando universale BLE",
+        "description": "Impara i tasti di un telecomando che usa BLE Advertising: ogni tasto diventa un pulsante in Home Assistant e viene generato un evento quando usi il telecomando originale.\n\nFunziona solo con telecomandi / app che trasmettono BLE Advertising (non con dispositivi che richiedono una connessione Bluetooth). I telecomandi con codice variabile (rolling code) potrebbero rifiutare un tasto ripetuto.",
+        "data": {
+          "name": "Nome del telecomando",
+          "adapter_ids": "Adattatore/i BLE ADV"
+        }
+      },
+      "learn_key": {
+        "title": "Impara un tasto",
+        "description": "Dai un nome al tasto e premi **Invia**: per i primi 3s non premere nulla (analisi del rumore di fondo), poi premi più volte il tasto sul telecomando.",
+        "data": {
+          "name": "Nome del tasto"
+        }
+      },
+      "learn_capture": {
+        "title": "Apprendimento del tasto"
+      },
+      "learn_none": {
+        "title": "Nessun segnale ricevuto",
+        "description": "Nessun nuovo segnale ricevuto per il tasto '{key}'. Avvicinati all'adattatore e riprova.",
+        "menu_options": {
+          "learn_capture_again": "Riprova",
+          "learn_menu": "Indietro"
+        }
+      },
+      "learn_choose": {
+        "title": "Scegli il segnale catturato",
+        "description": "Segnali ricevuti mentre premevi '{key}', i più ricevuti per primi (volte - protocollo - dati). Di solito il primo è quello giusto.",
+        "data": {
+          "raw": "Segnale"
+        }
+      },
+      "learn_test": {
+        "title": "Prova del tasto"
+      },
+      "learn_test_res": {
+        "title": "Il dispositivo ha reagito?",
+        "description": "Il tasto '{key}' è appena stato ritrasmesso. Il dispositivo ha reagito?",
+        "menu_options": {
+          "learn_save": "Sì, salva il tasto",
+          "learn_test": "Ritrasmetti di nuovo",
+          "learn_choose": "No, scegli un altro segnale",
+          "learn_capture_again": "No, impara di nuovo il tasto"
+        }
+      },
+      "learn_menu": {
+        "title": "Telecomando universale BLE",
+        "description": "Tasti appresi:\n{keys}",
+        "menu_options": {
+          "learn_key": "Impara un nuovo tasto",
+          "learn_delete": "Elimina tasti",
+          "learn_finish": "Salva il telecomando",
+          "learn_abort": "Annulla"
+        }
+      },
+      "learn_delete": {
+        "title": "Elimina tasti",
+        "data": {
+          "keys": "Tasti da eliminare"
+        }
+      }
+    },
+    "progress": {
+      "listen_raw": "Ascolto dei BLE Advertising\n{advs}",
+      "wait_pair": "Abbinamento in corso...",
+      "wait_config": "Premi un tasto qualsiasi (meglio Abbina) nell'app che controlla il dispositivo entro {max_seconds}s.",
+      "agg_config": "Raccolta dei dati di configurazione.",
+      "test_light": "Faccio lampeggiare la luce con la configurazione {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}",
+      "test_fan": "Accendo / spengo il ventilatore con la configurazione {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}",
+      "wait_config_remote": "Premi un tasto qualsiasi (meglio Abbina) sul controller entro {max_seconds}s.",
+      "learn_quiet": "NON premere nulla: ascolto il rumore Bluetooth di fondo ({seconds}s)...",
+      "learn_press": "Ora premi più volte il tasto '{key}' sul telecomando (fino a {seconds}s)...",
+      "learn_test": "Ritrasmetto il tasto '{key}'..."
+    },
+    "abort": {
+      "no_adapters": "Nessun adattatore Bluetooth compatibile con BLE Advertising trovato, annullo.",
+      "no_config": "Nessuna configurazione trovata o provata con successo.",
+      "not_implemented": "Non (ancora) implementato",
+      "reconfigure_successful": "Riconfigurazione completata!",
+      "already_configured": "Un dispositivo con gli stessi codec / id / indice è già configurato.\nMaggiori informazioni nella Guida alla risoluzione dei problemi - Step 3.3",
+      "no_keys": "Nessun tasto appreso."
+    },
+    "error": {
+      "missing_entity": "Configura almeno un ventilatore o una luce.",
+      "missing_adapter": "Seleziona almeno un adattatore.",
+      "invalid_key_name": "Il nome del tasto non può essere vuoto.",
+      "duplicate_key_name": "Esiste già un tasto con questo nome."
+    }
+  },
+  "selector": {
+    "light": {
+      "options": {
+        "cww": "Bianco freddo / caldo",
+        "onoff": "Solo acceso / spento",
+        "rgb": "RGB",
+        "none": "Nessuno"
+      }
+    },
+    "fan": {
+      "options": {
+        "3speed": "Ventilatore a 3 velocità",
+        "4speed": "Ventilatore a 4 velocità",
+        "6speed": "Ventilatore a 6 velocità",
+        "8speed": "Ventilatore a 8 velocità",
+        "100speed": "Ventilatore a 100 velocità",
+        "none": "Nessuno"
+      }
+    },
+    "remote": {
+      "options": {
+        "new": "Nuovo controller collegato"
+      }
+    },
+    "forced_cmds": {
+      "options": {
+        "turn_on": "Accendi",
+        "turn_off": "Spegni"
+      }
+    },
+    "effects": {
+      "options": {
+        "nm": "Luce notturna",
+        "rgb": "Ciclo RGB",
+        "rgbk": "Ciclo RGBK"
+      }
+    },
+    "presets": {
+      "options": {
+        "breeze": "Vento naturale",
+        "sleep": "Modalità notte"
+      }
+    },
+    "tr_set": {
+      "options": {
+        "default": "Predefinito",
+        "rev_on_off": "Inverti acceso/spento",
+        "fl": "Sfarfallio",
+        "no_nm": "Senza luce notturna",
+        "nm_as_effect": "Luce notturna come effetto",
+        "nm_as_second_light": "Luce notturna come seconda luce"
+      }
+    }
+  },
+  "entity": {
+    "event": {
+      "event": {
+        "name": "Comando ricevuto"
+      },
+      "learned_event": {
+        "name": "Tasto ricevuto"
+      }
+    },
+    "switch": {
+      "silent": {
+        "name": "Modalità senza comandi"
+      }
+    },
+    "fan": {
+      "fan_0": {
+        "name": "Ventilatore principale",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "breeze": "Vento naturale",
+              "sleep": "Modalità notte"
+            }
+          }
+        }
+      },
+      "fan_1": {
+        "name": "Secondo ventilatore",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "breeze": "Vento naturale",
+              "sleep": "Modalità notte"
+            }
+          }
+        }
+      },
+      "fan_2": {
+        "name": "Terzo ventilatore",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "breeze": "Vento naturale",
+              "sleep": "Modalità notte"
+            }
+          }
+        }
+      }
+    },
+    "light": {
+      "light_0": {
+        "name": "Luce principale",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "nm": "Luce notturna",
+              "rgb": "Ciclo RGB",
+              "rgbk": "Ciclo RGBK"
+            }
+          }
+        }
+      },
+      "light_1": {
+        "name": "Seconda luce",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "nm": "Luce notturna",
+              "rgb": "Ciclo RGB",
+              "rgbk": "Ciclo RGBK"
+            }
+          }
+        }
+      },
+      "light_2": {
+        "name": "Terza luce",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "nm": "Luce notturna",
+              "rgb": "Ciclo RGB",
+              "rgbk": "Ciclo RGBK"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "inject_raw": {
+      "name": "Invia BLE ADV grezzo",
+      "description": "Invia un BLE ADV grezzo in formato esadecimale.",
+      "fields": {
+        "adapter_id": {
+          "name": "ID adattatore",
+          "description": "Il nome dell'adattatore da usare."
+        },
+        "raw": {
+          "name": "BLE ADV grezzo",
+          "description": "Il BLE Advertisement grezzo da inviare."
+        },
+        "interval": {
+          "name": "Intervallo",
+          "description": "L'intervallo tra due trasmissioni, in ms."
+        },
+        "repeat": {
+          "name": "Ripetizioni",
+          "description": "Il segnale verrà trasmesso 'Ripetizioni' volte."
+        },
+        "device_queue": {
+          "name": "Nome della coda del dispositivo",
+          "description": "Il nome della coda del dispositivo, non legato a un ID: serve a distinguere le trasmissioni tra dispositivi diversi e a gestire correttamente le code."
+        },
+        "duration": {
+          "name": "Durata minima",
+          "description": "La durata minima prima di poter inviare un altro segnale con lo stesso adattatore/dispositivo, in ms."
+        }
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "any_entity_state": "Lo stato di un'entità è cambiato",
+      "enc_cmd": "Comando ricevuto"
+    },
+    "action_type": {
+      "enc_cmd": "Invia comando"
+    }
+  }
+}

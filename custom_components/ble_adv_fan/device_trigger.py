@@ -28,7 +28,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, TRIGGER_TYPE_ANY_STATE, TRIGGER_TYPE_EVENT_ENC_CMD
 from .device import BleAdvDevice
-from .helpers import BYTE_SELECTOR, ENC_CMD_PARAMS, get_device_from_id
+from .helpers import BYTE_SELECTOR, ENC_CMD_PARAMS, get_device_from_id, is_learned_remote_device
 
 
 class _SubTriggerBase:
@@ -115,6 +115,8 @@ async def async_attach_trigger(hass: HomeAssistant, config: ConfigType, action: 
 
 async def async_get_triggers(hass: HomeAssistant, device_id: str) -> list[dict[str, str]]:
     """List device triggers."""
+    if is_learned_remote_device(hass, device_id):
+        return []
     return [{CONF_PLATFORM: CONF_DEVICE, CONF_DOMAIN: DOMAIN, CONF_DEVICE_ID: device_id, CONF_TYPE: x} for x in _get_triggers(hass)]
 
 

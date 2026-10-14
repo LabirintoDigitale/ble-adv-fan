@@ -4,6 +4,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "ble_adv_fan"
 PLATFORMS = [Platform.LIGHT, Platform.FAN, Platform.EVENT, Platform.SWITCH]
+LEARNED_PLATFORMS = [Platform.BUTTON, Platform.EVENT]
 
 EVENT_TYPE = "event"
 SILENT_SWITCH_TYPE = "silent"
@@ -53,6 +54,11 @@ CONF_FANS = "fans"
 CONF_REMOTE = "remote"
 CONF_REMOTES = "remotes"
 CONF_PAIRED = "paired"
+CONF_ENTRY_TYPE = "entry_type"
+ENTRY_TYPE_LEARNED = "learned_remote"
+CONF_KEYS = "keys"
+CONF_KEY_ID = "key_id"
+LEARNED_EVENT_TYPE = "learned_event"
 CONF_MAX_ENTITY_NB = 3  # The max nb of entity that the config can handle in translations json files
 
 # Taken from https://www.bluetooth.com/specifications/assigned-numbers/

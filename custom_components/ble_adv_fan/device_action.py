@@ -19,7 +19,7 @@ from homeassistant.helpers.typing import ConfigType, TemplateVarsType
 from .codecs.models import BleAdvEncCmd
 from .const import DOMAIN, TRIGGER_TYPE_EVENT_ENC_CMD
 from .device import BleAdvDevice
-from .helpers import BYTE_SELECTOR, ENC_CMD_PARAMS, get_device_from_id
+from .helpers import BYTE_SELECTOR, ENC_CMD_PARAMS, get_device_from_id, is_learned_remote_device
 
 DEVICE_ACTION_BASE_SCHEMA = vol.Schema(
     {
@@ -77,6 +77,8 @@ async def async_call_action_from_config(hass: HomeAssistant, config: ConfigType,
 
 async def async_get_actions(hass: HomeAssistant, device_id: str) -> list[dict[str, str]]:
     """List device actions."""
+    if is_learned_remote_device(hass, device_id):
+        return []
     return [{CONF_PLATFORM: CONF_DEVICE, CONF_DOMAIN: DOMAIN, CONF_DEVICE_ID: device_id, CONF_TYPE: x} for x in _get_actions(hass)]
 
 

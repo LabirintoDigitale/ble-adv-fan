@@ -7,9 +7,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .device import BleAdvDevice, BleAdvEvent
+from .learned_remote import BleAdvLearnedEvent, BleAdvLearnedRemote
 
 
 async def async_setup_entry(_: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Entry setup."""
-    device: BleAdvDevice = entry.runtime_data
-    async_add_entities([BleAdvEvent(device)], True)
+    device: BleAdvDevice | BleAdvLearnedRemote = entry.runtime_data
+    if isinstance(device, BleAdvLearnedRemote):
+        async_add_entities([BleAdvLearnedEvent(device)], True)
+    else:
+        async_add_entities([BleAdvEvent(device)], True)

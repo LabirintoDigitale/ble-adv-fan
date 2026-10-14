@@ -5,14 +5,15 @@ from __future__ import annotations
 import logging
 import sys
 from collections import deque
+from collections.abc import Callable
 from copy import copy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Protocol
 
 from homeassistant.components.diagnostics import async_format_manifest
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import Event, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant
 from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.loader import async_get_integration
 
@@ -21,9 +22,24 @@ from .codecs import codec_from_dyn_base
 from .codecs.models import BleAdvAdvertisement, BleAdvCodec, BleAdvConfig, BleAdvEncCmd, BleAdvEntAttr
 from .const import CONF_ADAPTER_ID, CONF_DEVICE_QUEUE, CONF_DURATION, CONF_INTERVAL, CONF_RAW, CONF_REPEAT, DOMAIN
 from .esp_adapters import BleAdvEspBtManager
+from .presence import BleAdvPresenceTracker
 from .shelly_adapters import BleAdvShellyBtManager
 
 _LOGGER = logging.getLogger(__name__)
+
+HA_BLUETOOTH_DOMAIN = "bluetooth"
+
+type RawCaptureCallback = Callable[[str, str, bytes, BleAdvAdvertisement], None]
+
+
+class BleAdvRawListener(Protocol):
+    """Device listening to every raw advertisement, such as a learned remote."""
+
+    def on_raw_adv(self, adapter_id: str, orig: str, adv: BleAdvAdvertisement) -> None:
+        """Call on each raw advertisement received."""
+
+    def update_availability(self) -> None:
+        """Update availability."""
 
 
 class BleAdvBaseDevice:
@@ -180,6 +196,11 @@ class BleAdvCoordinator:
         self.listened_decoded_confs: list[tuple[str, str, str, list[Any], BleAdvConfig]] = []
         self._diags: deque[str] = deque(maxlen=keep_recv)
 
+        self.presence: BleAdvPresenceTracker = BleAdvPresenceTracker()
+        self._raw_listeners: list[BleAdvRawListener] = []
+        self._raw_captures: dict[RawCaptureCallback, datetime] = {}
+        self._cancel_ha_bt: CALLBACK_TYPE | None = None
+
     def _add_diag(self, msg: str, log_level: int = logging.DEBUG) -> None:
         """Add a diagnostic log."""
         if log_level != logging.NOTSET:
@@ -191,10 +212,33 @@ class BleAdvCoordinator:
         for bt_manager in [bt_man for bt_man in self.bt_managers if not bt_man.disabled]:
             await bt_manager.async_init()
         self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self.on_stop_event)
+        self.ensure_ha_bluetooth()
+
+    def ensure_ha_bluetooth(self) -> bool:
+        """Follow the advertisements received by the HA Bluetooth integration, if loaded. Return True if followed."""
+        if self._cancel_ha_bt is not None:
+            return True
+        if HA_BLUETOOTH_DOMAIN not in self.hass.config.components:
+            return False
+        try:
+            from homeassistant.components import bluetooth  # noqa: PLC0415
+
+            def _on_ha_bt_adv(service_info: bluetooth.BluetoothServiceInfoBleak, _: bluetooth.BluetoothChange) -> None:
+                self.presence.record(service_info.address, service_info.source, service_info.name, service_info.rssi)
+
+            self._cancel_ha_bt = bluetooth.async_register_callback(self.hass, _on_ha_bt_adv, None, bluetooth.BluetoothScanningMode.PASSIVE)
+        except Exception:
+            self._add_diag("Cannot follow the HA Bluetooth integration", logging.INFO)
+            _LOGGER.exception("Cannot follow the HA Bluetooth integration")
+            return False
+        return True
 
     async def async_final(self) -> None:
         """Async Final: Clean-up."""
         self._add_diag("Cleaning BT Connections.", logging.INFO)
+        if self._cancel_ha_bt is not None:
+            self._cancel_ha_bt()
+            self._cancel_ha_bt = None
         for bt_manager in [bt_man for bt_man in self.bt_managers if not bt_man.disabled]:
             await bt_manager.async_final()
 
@@ -211,6 +255,8 @@ class BleAdvCoordinator:
         for device in self._devices:
             if adapter_id in device.adapter_ids:
                 device.update_availability()
+        for listener in self._raw_listeners:
+            listener.update_availability()
         self._adapter_macs.clear()
         for bt_manager in self.bt_managers:
             self._adapter_macs.update(x.mac for x in bt_manager.adapters.values())
@@ -248,6 +294,22 @@ class BleAdvCoordinator:
         self._recompute_in_use_codecs()
         self._dec_last_advs.clear()
         self._add_diag(f"Unregistered device '{device.unique_id}'")
+
+    def add_raw_listener(self, listener: BleAdvRawListener) -> None:
+        """Register a listener of all raw advertisements."""
+        self._raw_listeners.append(listener)
+
+    def remove_raw_listener(self, listener: BleAdvRawListener) -> None:
+        """Unregister a listener of all raw advertisements."""
+        self._raw_listeners = [x for x in self._raw_listeners if x is not listener]
+
+    def start_raw_capture(self, callback: RawCaptureCallback, max_duration: float) -> None:
+        """Call the callback on each raw advertisement received (no de-duplication), during max_duration seconds at most."""
+        self._raw_captures[callback] = datetime.now() + timedelta(seconds=max_duration)
+
+    def stop_raw_capture(self, callback: RawCaptureCallback) -> None:
+        """Stop a raw capture."""
+        self._raw_captures.pop(callback, None)
 
     async def advertise(self, adapter_id: str | None, queue_id: str, qi: BleAdvQueueItem) -> None:
         """Advertise."""
@@ -326,6 +388,9 @@ class BleAdvCoordinator:
             if orig in self.ign_macs or orig in self._adapter_macs or len(raw_adv) < 8:
                 return
 
+            now = datetime.now()
+            self.presence.record(orig, adapter_id, now=now)
+
             # Parse the raw data and find the relevant info ble_type and raw
             adv = BleAdvAdvertisement.FromRaw(raw_adv)
 
@@ -335,8 +400,14 @@ class BleAdvCoordinator:
 
             self._add_diag(f"{orig} - {raw_adv.hex().upper()}", logging.NOTSET)
 
+            # Raw captures and listeners receive every advertisement, before the de-duplication
+            self._raw_captures = {clbk: exp for clbk, exp in self._raw_captures.items() if exp > now}
+            for clbk in list(self._raw_captures):
+                clbk(adapter_id, orig, raw_adv, adv)
+            for listener in self._raw_listeners:
+                listener.on_raw_adv(adapter_id, orig, adv)
+
             # Clean-up last raw / decoded advs based on expiry date
-            now = datetime.now()
             self._raw_last_advs = {x: y for x, y in self._raw_last_advs.items() if (y > now)}
             self._dec_last_advs = {x: y for x, y in self._dec_last_advs.items() if (y.del_time > now)}
 

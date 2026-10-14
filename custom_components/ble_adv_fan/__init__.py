@@ -22,6 +22,7 @@ from .const import (
     CONF_COORDINATOR_ID,
     CONF_DEVICE_QUEUE,
     CONF_DURATION,
+    CONF_ENTRY_TYPE,
     CONF_FANS,
     CONF_FORCED_ID,
     CONF_GOOGLE_LCC_UUIDS,
@@ -32,6 +33,7 @@ from .const import (
     CONF_INDEX,
     CONF_INTERVAL,
     CONF_KEEP_RECV,
+    CONF_KEYS,
     CONF_LAST_VERSION,
     CONF_LIGHTS,
     CONF_MAINTAINER_MENUS,
@@ -51,10 +53,13 @@ from .const import (
     CONF_USE_DIR,
     CONF_USE_OSC,
     DOMAIN,
+    ENTRY_TYPE_LEARNED,
+    LEARNED_PLATFORMS,
     PLATFORMS,
 )
 from .coordinator import BleAdvCoordinator
 from .device import BleAdvDevice
+from .learned_remote import BleAdvLearnedKey, BleAdvLearnedRemote
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,7 +91,12 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-type BleAdvConfigEntry = ConfigEntry[BleAdvDevice]
+type BleAdvConfigEntry = ConfigEntry[BleAdvDevice | BleAdvLearnedRemote]
+
+
+def is_learned_remote(entry: ConfigEntry) -> bool:
+    """Return True if the entry is a Learned Remote."""
+    return entry.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_LEARNED
 
 
 @singleton(f"{DOMAIN}/{CONF_COORDINATOR_ID}")
@@ -126,6 +136,8 @@ async def async_setup(hass: HomeAssistant, conf: ConfigType) -> bool:
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: BleAdvConfigEntry) -> bool:
     """Migrate old entry."""
+    if is_learned_remote(config_entry):
+        return True
 
     new_data = {**config_entry.data}
     update_needed: bool = False
@@ -210,13 +222,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: BleAdvConfigEntry) -> bo
         _LOGGER.warning("entry ignored as unique_id is None.")
         return False
 
-    device_conf = entry.data[CONF_DEVICE]
     tech_conf = entry.data[CONF_TECHNICAL]
     coordinator = await get_coordinator(hass)
 
     # Lazy migration to prefixed adapter names for legacy "esp" adapters, allowing seemless fallback
     prefixes = tuple(f"{bt_manager.name}/" for bt_manager in coordinator.bt_managers)
     adapter_ids = [a if a.startswith(prefixes) else f"esp/{a}" for a in tech_conf[CONF_ADAPTER_IDS]]
+
+    if is_learned_remote(entry):
+        remote = BleAdvLearnedRemote(
+            coordinator,
+            entry.unique_id,
+            entry.title,
+            adapter_ids,
+            [BleAdvLearnedKey.from_conf(key) for key in entry.data[CONF_KEYS]],
+            int(tech_conf[CONF_REPEATS]),
+            int(tech_conf[CONF_INTERVAL]),
+        )
+        entry.runtime_data = remote
+        coordinator.add_raw_listener(remote)
+        await hass.config_entries.async_forward_entry_setups(entry, LEARNED_PLATFORMS)
+        return True
+
+    device_conf = entry.data[CONF_DEVICE]
 
     entry.runtime_data = BleAdvDevice(
         hass,
@@ -246,8 +274,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: BleAdvConfigEntry) -> bo
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.debug(f"Unloading entry {entry.unique_id}")
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    learned = is_learned_remote(entry)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, LEARNED_PLATFORMS if learned else PLATFORMS)
     if unload_ok:
         coordinator = await get_coordinator(hass)
-        coordinator.remove_device(entry.runtime_data)
+        if learned:
+            coordinator.remove_raw_listener(entry.runtime_data)
+        else:
+            coordinator.remove_device(entry.runtime_data)
     return unload_ok

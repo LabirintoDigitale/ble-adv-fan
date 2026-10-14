@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 from random import randint
 from typing import Any, cast
+from uuid import uuid4
 
 import voluptuous as vol
 from aiohttp import web
@@ -42,7 +43,7 @@ from .codecs.const import (
     LIGHT_TYPE_CWW,
     LIGHT_TYPE_RGB,
 )
-from .codecs.models import BleAdvCodec, BleAdvConfig, BleAdvEntAttr
+from .codecs.models import BleAdvAdvertisement, BleAdvCodec, BleAdvConfig, BleAdvEntAttr
 from .const import (
     CONF_ADAPTER_ID,
     CONF_ADAPTER_IDS,
@@ -51,6 +52,7 @@ from .const import (
     CONF_DEVICE_QUEUE,
     CONF_DURATION,
     CONF_EFFECTS,
+    CONF_ENTRY_TYPE,
     CONF_FANS,
     CONF_FORCED_CMDS,
     CONF_FORCED_ID,
@@ -58,6 +60,8 @@ from .const import (
     CONF_FORCED_ON,
     CONF_INDEX,
     CONF_INTERVAL,
+    CONF_KEY_ID,
+    CONF_KEYS,
     CONF_LAST_VERSION,
     CONF_LIGHTS,
     CONF_MAX_ENTITY_NB,
@@ -81,12 +85,23 @@ from .const import (
     CONF_USE_DIR,
     CONF_USE_OSC,
     DOMAIN,
+    ENTRY_TYPE_LEARNED,
 )
 from .coordinator import BleAdvBaseDevice, BleAdvCoordinator
+from .learned_remote import LEARNED_INTERVAL, LEARNED_REPEAT, async_send_raw
 
 _LOGGER = logging.getLogger(__name__)
 
 WAIT_MAX_SECONDS = 10
+
+LEARN_QUIET_SECONDS = 3.0
+LEARN_PRESS_SECONDS = 10.0
+LEARN_END_SILENCE = timedelta(seconds=2)
+LEARN_MIN_COUNT = 3
+LEARN_MAX_CANDIDATES = 8
+
+PRESENCE_MIN_DURATION = timedelta(hours=1)
+PRESENCE_MAX_ROWS = 100
 
 
 class _CodecConfig(BleAdvConfig):
@@ -290,6 +305,63 @@ class BleAdvWaitRawAdvProgress(BleAdvWaitProgress):
         return _ActionResult(ph={"advs": _format_advs(coord, self.raw_advs)})
 
 
+@dataclass
+class _LearnCandidate:
+    raw: bytes
+    count: int
+    last: datetime
+    origs: set[str]
+
+
+class BleAdvLearnProgress(BleAdvWaitProgress):
+    """Learn a remote key: listen to the background noise first, then to the key pressed."""
+
+    def __init__(self, flow: BleAdvConfigFlow, step_id: str, key_name: str, quiet: float | None = None, press: float | None = None) -> None:
+        quiet = LEARN_QUIET_SECONDS if quiet is None else quiet
+        press = LEARN_PRESS_SECONDS if press is None else press
+        super().__init__(flow, step_id, quiet + press)
+        self._press_start: datetime = datetime.now() + timedelta(seconds=quiet)
+        self._ph_quiet: dict[str, str] = {"key": key_name, "seconds": str(int(quiet))}
+        self._ph_press: dict[str, str] = {"key": key_name, "seconds": str(int(press))}
+        self._result = _ActionResult("learn_quiet", self._ph_quiet)
+        self._quiet_advs: set[BleAdvAdvertisement] = set()
+        self._quiet_origs: set[str] = set()
+        self._cands: dict[BleAdvAdvertisement, _LearnCandidate] = {}
+        self._flow.coordinator.start_raw_capture(self.on_raw, quiet + press + 1)
+
+    def on_raw(self, _: str, orig: str, raw: bytes, adv: BleAdvAdvertisement) -> None:
+        """Record a raw adv: as noise during the quiet phase, else as a candidate if not seen as noise."""
+        now = datetime.now()
+        if now < self._press_start:
+            self._quiet_advs.add(adv)
+            self._quiet_origs.add(orig)
+            return
+        if adv in self._quiet_advs or orig in self._quiet_origs:
+            return
+        cand = self._cands.setdefault(adv, _LearnCandidate(raw, 0, now, set()))
+        cand.count += 1
+        cand.last = now
+        cand.origs.add(orig)
+
+    def candidates(self) -> list[_LearnCandidate]:
+        """Return the best candidates, most received first."""
+        return sorted(self._cands.values(), key=lambda x: x.count, reverse=True)[:LEARN_MAX_CANDIDATES]
+
+    def stop(self) -> None:
+        """Stop the capture."""
+        self._flow.coordinator.stop_raw_capture(self.on_raw)
+
+    def _evaluate(self) -> _ActionResult:
+        now = datetime.now()
+        if now < self._press_start:
+            return _ActionResult("learn_quiet", self._ph_quiet)
+        # Stop as soon as the key was well received and then released
+        cands = list(self._cands.values())
+        if any(x.count >= LEARN_MIN_COUNT for x in cands) and (now - max(x.last for x in cands)) > LEARN_END_SILENCE:
+            self._stop_time = now
+        return _ActionResult("learn_press", self._ph_press)
+
+
 class BleAdvConfigHandler:
     """Handle configs."""
 
@@ -371,6 +443,17 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
 
         self._diags: list[str] = []
         self._return_step_after_diag: str = ""
+
+        self._learn: dict[str, Any] = {}
+        self._learn_title: str = ""
+        self._learn_key_name: str = ""
+        self._learn_raw: bytes = b""
+        self._learn_candidates: list[_LearnCandidate] = []
+
+    def async_remove(self) -> None:
+        """Clean-up when the flow is removed."""
+        if isinstance(self._progress, BleAdvLearnProgress):
+            self._progress.stop()
 
     def add_diag(self, msg: str, log_level: int = logging.DEBUG) -> None:
         """Log a message and add it to diagnostics."""
@@ -463,7 +546,7 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         self.coordinator: BleAdvCoordinator = await get_coordinator(self.hass)
         if not self.coordinator.has_available_adapters():
             return await self.async_step_no_adapters()
-        return self.async_show_menu(step_id="user", menu_options=["wait_config", "pair", "tools"])
+        return self.async_show_menu(step_id="user", menu_options=["wait_config", "pair", "learn_remote", "tools"])
 
     async def async_step_no_adapters(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
         """No Adapter Step."""
@@ -478,7 +561,175 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         """Tooling Step."""
         self._return_step_after_diag = "tools"
         supp_menus = ["manual", "decode_raw", "inject"] if self.coordinator.maintainer_menus else []
-        return self.async_show_menu(step_id="tools", menu_options=["diag", "listen_raw", *supp_menus])
+        return self.async_show_menu(step_id="tools", menu_options=["diag", "listen_raw", "bt_devices", *supp_menus])
+
+    async def async_step_bt_devices(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """List the Bluetooth devices continuously present for at least one hour."""
+        ha_bt = self.coordinator.ensure_ha_bluetooth()
+        now = datetime.now()
+        presence = self.coordinator.presence
+        devs = presence.present_since(PRESENCE_MIN_DURATION, now)
+
+        def _dur(delta: timedelta) -> str:
+            minutes = int(delta.total_seconds() // 60)
+            if minutes >= 1440:
+                return f"{minutes // 1440}d {(minutes // 60) % 24}h {minutes % 60:02d}m"
+            return f"{minutes // 60}h {minutes % 60:02d}m"
+
+        rows = [
+            f"| `{dev.address}` | {dev.name or '-'} | {dev.rssi if dev.rssi is not None else '-'} | {_dur(now - dev.first_seen)} | {', '.join(sorted(dev.sources))} |"
+            for dev in devs[:PRESENCE_MAX_ROWS]
+        ]
+        if len(devs) > PRESENCE_MAX_ROWS:
+            rows.append(f"| ... +{len(devs) - PRESENCE_MAX_ROWS} | | | | |")
+        table = "\n".join(["| MAC | Name | RSSI | Since | Seen by |", "|---|---|---|---|---|", *rows]) if rows else ""
+        ph = {
+            "count": str(len(devs)),
+            "since": presence.started.strftime("%d/%m/%Y %H:%M"),
+            "monitoring": _dur(now - presence.started),
+            "tracked": str(len(presence)),
+            "ha_bt": "✅" if ha_bt else "❌",
+            "table": table,
+        }
+        return self.async_show_menu(step_id="bt_devices", menu_options=["bt_devices", "tools"], description_placeholders=ph)
+
+    async def async_step_learn_remote(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Universal BLE Remote: name and adapters."""
+        errors: dict[str, str] = {}
+        adapters = self.coordinator.get_adapter_ids()
+        if user_input is not None:
+            if user_input[CONF_ADAPTER_IDS]:
+                self._learn_title = user_input[CONF_NAME]
+                self._learn = {
+                    CONF_ENTRY_TYPE: ENTRY_TYPE_LEARNED,
+                    CONF_TECHNICAL: {CONF_ADAPTER_IDS: user_input[CONF_ADAPTER_IDS], CONF_REPEATS: LEARNED_REPEAT, CONF_INTERVAL: LEARNED_INTERVAL},
+                    CONF_KEYS: [],
+                }
+                return await self.async_step_learn_key()
+            errors["base"] = "missing_adapter"
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME): str,
+                vol.Required(CONF_ADAPTER_IDS, default=adapters): self._get_multi_selector(CONF_ADAPTER_IDS, adapters),
+            }
+        )
+        return self.async_show_form(step_id="learn_remote", data_schema=data_schema, errors=errors)
+
+    async def async_step_learn_key(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Name of the key to learn."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            name = user_input[CONF_NAME].strip()
+            if not name:
+                errors[CONF_NAME] = "invalid_key_name"
+            elif any(key[CONF_NAME] == name for key in self._learn[CONF_KEYS]):
+                errors[CONF_NAME] = "duplicate_key_name"
+            else:
+                self._learn_key_name = name
+                return await self.async_step_learn_capture_again()
+        return self.async_show_form(step_id="learn_key", data_schema=vol.Schema({vol.Required(CONF_NAME): str}), errors=errors)
+
+    async def async_step_learn_capture(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Capture the key."""
+        if self._progress is None:
+            self._progress = BleAdvLearnProgress(self, "learn_capture", self._learn_key_name)
+        if (flow_res := self._progress.next()) is not None:
+            return flow_res
+        progress = cast("BleAdvLearnProgress", self._progress)
+        progress.stop()
+        self._learn_candidates = progress.candidates()
+        self._progress = None
+        self.add_diag(f"Learn '{self._learn_key_name}' - candidates: {[(x.raw.hex().upper(), x.count) for x in self._learn_candidates]}")
+        return self.async_show_progress_done(next_step_id="learn_choose" if self._learn_candidates else "learn_none")
+
+    async def async_step_learn_capture_again(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """(Re)Start the capture of the key."""
+        self._progress = None
+        return await self.async_step_learn_capture()
+
+    async def async_step_learn_none(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Nothing captured."""
+        opts = ["learn_capture_again", "learn_menu"]
+        return self.async_show_menu(step_id="learn_none", menu_options=opts, description_placeholders={"key": self._learn_key_name})
+
+    def _candidate_label(self, cand: _LearnCandidate) -> str:
+        decoded = self.coordinator.decode_raw(cand.raw.hex())
+        codec = decoded[0] if len(decoded) > 1 else "raw"
+        raw = cand.raw.hex().upper()
+        return f"{cand.count}x - {codec} - {raw[:48]}{'...' if len(raw) > 48 else ''}"
+
+    async def async_step_learn_choose(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Choose the captured advertisement."""
+        if user_input is not None:
+            self._learn_raw = bytes.fromhex(user_input[CONF_RAW])
+            return await self.async_step_learn_test()
+        options = [selector.SelectOptionDict(value=x.raw.hex().upper(), label=self._candidate_label(x)) for x in self._learn_candidates]
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_RAW, default=options[0]["value"]): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=options, mode=selector.SelectSelectorMode.LIST)
+                )
+            }
+        )
+        return self.async_show_form(step_id="learn_choose", data_schema=data_schema, description_placeholders={"key": self._learn_key_name})
+
+    async def _async_learn_send(self) -> None:
+        tech = self._learn[CONF_TECHNICAL]
+        await async_send_raw(self.coordinator, tech[CONF_ADAPTER_IDS], "learn", self._learn_raw, int(tech[CONF_REPEATS]), int(tech[CONF_INTERVAL]))
+        await asyncio.sleep(self.WAIT_TEST_LIGHT)
+
+    async def async_step_learn_test(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Replay the chosen advertisement."""
+        if self._progress is None:
+            self._progress = BleAdvProgressFlow(self, "learn_test", self._async_learn_send, {"key": self._learn_key_name})
+        if (flow_res := self._progress.next()) is not None:
+            return flow_res
+        self._progress = None
+        return self.async_show_progress_done(next_step_id="learn_test_res")
+
+    async def async_step_learn_test_res(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Ask if the replay worked."""
+        opts = ["learn_save", "learn_test", "learn_choose", "learn_capture_again"]
+        return self.async_show_menu(step_id="learn_test_res", menu_options=opts, description_placeholders={"key": self._learn_key_name})
+
+    async def async_step_learn_save(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Save the learned key."""
+        key = {CONF_KEY_ID: uuid4().hex[:8], CONF_NAME: self._learn_key_name, CONF_RAW: self._learn_raw.hex().upper()}
+        self._learn[CONF_KEYS] = [*self._learn[CONF_KEYS], key]
+        return await self.async_step_learn_menu()
+
+    async def async_step_learn_menu(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Learned Remote menu."""
+        keys = self._learn[CONF_KEYS]
+        opts = ["learn_key", "learn_delete", "learn_finish"] if keys else ["learn_key", "learn_abort"]
+        ph = {"keys": "\n".join(f"- {key[CONF_NAME]}" for key in keys) if keys else "-"}
+        return self.async_show_menu(step_id="learn_menu", menu_options=opts, description_placeholders=ph)
+
+    async def async_step_learn_delete(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Delete learned keys."""
+        if user_input is not None:
+            self._learn[CONF_KEYS] = [key for key in self._learn[CONF_KEYS] if key[CONF_KEY_ID] not in user_input[CONF_KEYS]]
+            return await self.async_step_learn_menu()
+        options = [selector.SelectOptionDict(value=key[CONF_KEY_ID], label=key[CONF_NAME]) for key in self._learn[CONF_KEYS]]
+        data_schema = vol.Schema(
+            {
+                vol.Optional(CONF_KEYS, default=[]): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=options, mode=selector.SelectSelectorMode.LIST, multiple=True)
+                )
+            }
+        )
+        return self.async_show_form(step_id="learn_delete", data_schema=data_schema)
+
+    async def async_step_learn_abort(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Abort as no key was learned."""
+        return self.async_abort(reason="no_keys")
+
+    async def async_step_learn_finish(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Create / Update the Learned Remote."""
+        if self.source == SOURCE_RECONFIGURE:
+            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data=self._learn)
+        await self.async_set_unique_id(f"learned##{uuid4().hex}")
+        return self.async_create_entry(title=self._learn_title, data=self._learn)
 
     async def async_step_diag(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Diagnostic step."""
@@ -938,7 +1189,11 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         """Reconfigure Step."""
         self.add_diag("'Reconfigure' flow started")
         self.coordinator = await get_coordinator(self.hass)
-        self._data = {**self._get_reconfigure_entry().data}
+        entry_data = self._get_reconfigure_entry().data
+        if entry_data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_LEARNED:
+            self._learn = {**entry_data, CONF_KEYS: list(entry_data[CONF_KEYS])}
+            return await self.async_step_learn_menu()
+        self._data = {**entry_data}
         return await self.async_step_configure()
 
     def _convert_to_list(self, ent_type: str, user_input: dict[str, Any]) -> list[Any]:
