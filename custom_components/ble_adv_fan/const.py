@@ -5,6 +5,7 @@ from homeassistant.const import Platform
 DOMAIN = "ble_adv_fan"
 PLATFORMS = [Platform.LIGHT, Platform.FAN, Platform.EVENT, Platform.SWITCH]
 LEARNED_PLATFORMS = [Platform.BUTTON, Platform.EVENT]
+KAIYU_PLATFORMS = [Platform.LIGHT]
 
 EVENT_TYPE = "event"
 SILENT_SWITCH_TYPE = "silent"
@@ -56,6 +57,8 @@ CONF_REMOTES = "remotes"
 CONF_PAIRED = "paired"
 CONF_ENTRY_TYPE = "entry_type"
 ENTRY_TYPE_LEARNED = "learned_remote"
+ENTRY_TYPE_KAIYU = "kaiyu_lights"
+CONF_COMPANY = "company"
 CONF_KEYS = "keys"
 CONF_KEY_ID = "key_id"
 LEARNED_EVENT_TYPE = "learned_event"

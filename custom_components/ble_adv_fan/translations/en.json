@@ -548,6 +548,12 @@
             }
           }
         }
+      },
+      "kaiyu_line": {
+        "name": "Output {line}"
+      },
+      "kaiyu_all": {
+        "name": "All outputs"
       }
     }
   },

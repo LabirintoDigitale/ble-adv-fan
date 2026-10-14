@@ -8,6 +8,7 @@
           "wait_config": "Copia la configurazione dell'app già abbinata (consigliato)",
           "pair": "Abbinamento",
           "learn_remote": "Telecomando universale BLE (impara i tasti di qualsiasi telecomando)",
+          "kaiyu": "Controller luci LEGO Kaiyu (12 uscite)",
           "tools": "Strumenti"
         }
       },
@@ -380,6 +381,41 @@
           "repeats": "Ripetizioni",
           "interval": "Intervallo (ms)"
         }
+      },
+      "kaiyu": {
+        "title": "Ricerca del controller Kaiyu"
+      },
+      "kaiyu_none": {
+        "title": "Controller non trovato",
+        "description": "Nessun comando dell'app Kaiyu ricevuto. Avvicinati all'adattatore e riprova, oppure inserisci l'ID a mano.",
+        "menu_options": {
+          "kaiyu": "Riprova",
+          "kaiyu_manual": "Inserisci l'ID a mano"
+        }
+      },
+      "kaiyu_manual": {
+        "title": "ID del controller",
+        "description": "ID del produttore (di solito 00C2) e ID del controller, in esadecimale (4 cifre ciascuno).",
+        "data": {
+          "company": "ID produttore",
+          "device": "ID controller"
+        }
+      },
+      "kaiyu_found": {
+        "title": "Controller luci LEGO Kaiyu",
+        "description": "Controller trovato: produttore {company}, ID {id}.\n\nVerranno create 12 luci (una per uscita) e una luce per tutte le uscite. Le luci seguono anche i comandi dell'app: chiudila quando usi Home Assistant, perché mentre è aperta ritrasmette continuamente il suo stato.",
+        "data": {
+          "name": "Nome",
+          "adapter_ids": "Adattatore/i BLE ADV"
+        }
+      },
+      "kaiyu_technical": {
+        "title": "Parametri di trasmissione",
+        "description": "Quando premi un tasto, il suo segnale viene trasmesso 'Ripetizioni' volte, uno ogni 'Intervallo' ms, in un'unica trasmissione continua (come il telecomando originale). Se il dispositivo reagisce più volte, abbassa le ripetizioni; se non reagisce sempre, alzale.",
+        "data": {
+          "repeats": "Ripetizioni",
+          "interval": "Intervallo (ms)"
+        }
       }
     },
     "progress": {
@@ -392,7 +428,8 @@
       "wait_config_remote": "Premi un tasto qualsiasi (meglio Abbina) sul controller entro {max_seconds}s.",
       "learn_quiet": "NON premere nulla: ascolto il rumore Bluetooth di fondo ({seconds}s)...",
       "learn_press": "Ora premi più volte il tasto **{key}** sul telecomando (fino a {seconds}s)...",
-      "learn_test": "Ritrasmetto il tasto **{key}**..."
+      "learn_test": "Ritrasmetto il tasto **{key}**...",
+      "kaiyu_wait": "Apri l'app Kaiyu e accendi o spegni una luce (entro {seconds}s)..."
     },
     "abort": {
       "no_adapters": "Nessun adattatore Bluetooth compatibile con BLE Advertising trovato, annullo.",
@@ -406,7 +443,8 @@
       "missing_entity": "Configura almeno un ventilatore o una luce.",
       "missing_adapter": "Seleziona almeno un adattatore.",
       "invalid_key_name": "Il nome del tasto non può essere vuoto.",
-      "duplicate_key_name": "Esiste già un tasto con questo nome."
+      "duplicate_key_name": "Esiste già un tasto con questo nome.",
+      "invalid_kaiyu_id": "Inserisci due valori esadecimali di 4 cifre (es. 00C2 e E577)."
     }
   },
   "selector": {
@@ -548,6 +586,12 @@
             }
           }
         }
+      },
+      "kaiyu_line": {
+        "name": "Linea {line}"
+      },
+      "kaiyu_all": {
+        "name": "Tutte le linee"
       }
     }
   },

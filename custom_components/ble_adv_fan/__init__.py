@@ -4,7 +4,7 @@ import logging
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_DEVICE, CONF_NAME
+from homeassistant.const import CONF_DEVICE, CONF_NAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig
@@ -19,6 +19,7 @@ from .const import (
     CONF_APPLE_INC_UUIDS,
     CONF_CODEC_ID,
     CONF_CODEC_ID_OLD,
+    CONF_COMPANY,
     CONF_COORDINATOR_ID,
     CONF_DEVICE_QUEUE,
     CONF_DURATION,
@@ -53,12 +54,15 @@ from .const import (
     CONF_USE_DIR,
     CONF_USE_OSC,
     DOMAIN,
+    ENTRY_TYPE_KAIYU,
     ENTRY_TYPE_LEARNED,
+    KAIYU_PLATFORMS,
     LEARNED_PLATFORMS,
     PLATFORMS,
 )
 from .coordinator import BleAdvCoordinator
 from .device import BleAdvDevice
+from .kaiyu_lights import BleAdvKaiyuController
 from .learned_remote import BleAdvLearnedKey, BleAdvLearnedRemote
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,12 +95,17 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-type BleAdvConfigEntry = ConfigEntry[BleAdvDevice | BleAdvLearnedRemote]
+type BleAdvConfigEntry = ConfigEntry[BleAdvDevice | BleAdvLearnedRemote | BleAdvKaiyuController]
 
 
 def is_learned_remote(entry: ConfigEntry) -> bool:
     """Return True if the entry is a Learned Remote."""
     return entry.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_LEARNED
+
+
+def entry_platforms(entry: ConfigEntry) -> list[Platform]:
+    """Return the platforms of the entry, depending on its type."""
+    return {ENTRY_TYPE_LEARNED: LEARNED_PLATFORMS, ENTRY_TYPE_KAIYU: KAIYU_PLATFORMS}.get(entry.data.get(CONF_ENTRY_TYPE, ""), PLATFORMS)
 
 
 @singleton(f"{DOMAIN}/{CONF_COORDINATOR_ID}")
@@ -136,7 +145,7 @@ async def async_setup(hass: HomeAssistant, conf: ConfigType) -> bool:
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: BleAdvConfigEntry) -> bool:
     """Migrate old entry."""
-    if is_learned_remote(config_entry):
+    if CONF_ENTRY_TYPE in config_entry.data:
         return True
 
     new_data = {**config_entry.data}
@@ -244,6 +253,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: BleAdvConfigEntry) -> bo
         await hass.config_entries.async_forward_entry_setups(entry, LEARNED_PLATFORMS)
         return True
 
+    if entry.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_KAIYU:
+        controller = BleAdvKaiyuController(
+            coordinator,
+            entry.unique_id,
+            entry.title,
+            adapter_ids,
+            bytes.fromhex(entry.data[CONF_COMPANY]),
+            bytes.fromhex(entry.data[CONF_DEVICE]),
+            int(tech_conf[CONF_REPEATS]),
+            int(tech_conf[CONF_INTERVAL]),
+        )
+        entry.runtime_data = controller
+        coordinator.add_raw_listener(controller)
+        await hass.config_entries.async_forward_entry_setups(entry, KAIYU_PLATFORMS)
+        return True
+
     device_conf = entry.data[CONF_DEVICE]
 
     entry.runtime_data = BleAdvDevice(
@@ -274,11 +299,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: BleAdvConfigEntry) -> bo
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     _LOGGER.debug(f"Unloading entry {entry.unique_id}")
-    learned = is_learned_remote(entry)
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, LEARNED_PLATFORMS if learned else PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, entry_platforms(entry))
     if unload_ok:
         coordinator = await get_coordinator(hass)
-        if learned:
+        if CONF_ENTRY_TYPE in entry.data:
             coordinator.remove_raw_listener(entry.runtime_data)
         else:
             coordinator.remove_device(entry.runtime_data)

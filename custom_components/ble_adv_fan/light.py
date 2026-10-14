@@ -37,6 +37,8 @@ from .codecs.const import (
 )
 from .const import CONF_EFFECTS, CONF_FORCED_CMDS, CONF_LIGHTS, CONF_MIN_BRIGHTNESS, CONF_REFRESH_ON_START, CONF_REVERSED
 from .device import ATTR_IS_ON, BleAdvDevice, BleAdvEntAttr, BleAdvEntity, BleAdvStateAttribute
+from .kaiyu import LINES_NB
+from .kaiyu_lights import BleAdvKaiyuController, BleAdvKaiyuLight
 
 
 class BleAdvLightError(Exception):
@@ -65,7 +67,10 @@ def create_entity(options: dict[str, Any], device: BleAdvDevice, index: int) -> 
 
 async def async_setup_entry(_: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Entr setup."""
-    device: BleAdvDevice = entry.runtime_data
+    device: BleAdvDevice | BleAdvKaiyuController = entry.runtime_data
+    if isinstance(device, BleAdvKaiyuController):
+        async_add_entities([BleAdvKaiyuLight(device, None), *(BleAdvKaiyuLight(device, i) for i in range(LINES_NB))], True)
+        return
     entities = [create_entity(options, device, i) for i, options in enumerate(entry.data[CONF_LIGHTS]) if CONF_TYPE in options]
     async_add_entities(entities, True)
 

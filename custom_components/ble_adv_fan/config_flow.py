@@ -49,6 +49,7 @@ from .const import (
     CONF_ADAPTER_IDS,
     CONF_CODEC_ID,
     CONF_CODEC_ID_OLD,
+    CONF_COMPANY,
     CONF_DEVICE_QUEUE,
     CONF_DURATION,
     CONF_EFFECTS,
@@ -85,9 +86,11 @@ from .const import (
     CONF_USE_DIR,
     CONF_USE_OSC,
     DOMAIN,
+    ENTRY_TYPE_KAIYU,
     ENTRY_TYPE_LEARNED,
 )
 from .coordinator import BleAdvBaseDevice, BleAdvCoordinator
+from .kaiyu import DEFAULT_COMPANY, kaiyu_parse_adv
 from .learned_remote import LEARNED_INTERVAL, LEARNED_REPEAT, async_send_raw
 
 _LOGGER = logging.getLogger(__name__)
@@ -102,6 +105,8 @@ LEARN_MAX_CANDIDATES = 8
 
 PRESENCE_MIN_DURATION = timedelta(hours=1)
 PRESENCE_MAX_ROWS = 100
+
+KAIYU_LISTEN_SECONDS = 15.0
 
 
 class _CodecConfig(BleAdvConfig):
@@ -362,6 +367,31 @@ class BleAdvLearnProgress(BleAdvWaitProgress):
         return _ActionResult("learn_press", self._ph_press)
 
 
+class BleAdvKaiyuProgress(BleAdvWaitProgress):
+    """Listen to the Kaiyu phone app to find the company / controller id."""
+
+    def __init__(self, flow: BleAdvConfigFlow, step_id: str, duration: float | None = None) -> None:
+        duration = KAIYU_LISTEN_SECONDS if duration is None else duration
+        super().__init__(flow, step_id, duration)
+        self._result = _ActionResult("kaiyu_wait", {"seconds": str(int(duration))})
+        self.found: tuple[bytes, bytes] | None = None
+        self._flow.coordinator.start_raw_capture(self.on_raw, duration + 1)
+
+    def on_raw(self, _: str, __: str, ___: bytes, adv: BleAdvAdvertisement) -> None:
+        """Record the first Kaiyu command received."""
+        if self.found is None and adv.ble_type == 0xFF and (parsed := kaiyu_parse_adv(adv.raw)) is not None:
+            self.found = (parsed[0], parsed[1].device_id)
+
+    def stop(self) -> None:
+        """Stop the capture."""
+        self._flow.coordinator.stop_raw_capture(self.on_raw)
+
+    def _evaluate(self) -> _ActionResult:
+        if self.found is not None:
+            self._stop_time = datetime.now()
+        return self._result
+
+
 class BleAdvConfigHandler:
     """Handle configs."""
 
@@ -449,10 +479,11 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         self._learn_key_name: str = ""
         self._learn_raw: bytes = b""
         self._learn_candidates: list[_LearnCandidate] = []
+        self._kaiyu: tuple[bytes, bytes] = (b"", b"")
 
     def async_remove(self) -> None:
         """Clean-up when the flow is removed."""
-        if isinstance(self._progress, BleAdvLearnProgress):
+        if isinstance(self._progress, BleAdvLearnProgress | BleAdvKaiyuProgress):
             self._progress.stop()
 
     def add_diag(self, msg: str, log_level: int = logging.DEBUG) -> None:
@@ -546,7 +577,7 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         self.coordinator: BleAdvCoordinator = await get_coordinator(self.hass)
         if not self.coordinator.has_available_adapters():
             return await self.async_step_no_adapters()
-        return self.async_show_menu(step_id="user", menu_options=["wait_config", "pair", "learn_remote", "tools"])
+        return self.async_show_menu(step_id="user", menu_options=["wait_config", "pair", "learn_remote", "kaiyu", "tools"])
 
     async def async_step_no_adapters(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
         """No Adapter Step."""
@@ -593,6 +624,79 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
             "rows": "\n".join(rows),
         }
         return self.async_show_menu(step_id="bt_devices", menu_options=["bt_devices", "tools"], description_placeholders=ph)
+
+    async def async_step_kaiyu(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Kaiyu controller: listen to the phone app to find the controller id."""
+        if not isinstance(self._progress, BleAdvKaiyuProgress):
+            self._progress = BleAdvKaiyuProgress(self, "kaiyu")
+        if (flow_res := self._progress.next()) is not None:
+            return flow_res
+        progress = cast("BleAdvKaiyuProgress", self._progress)
+        progress.stop()
+        self._progress = None
+        if progress.found is None:
+            return self.async_show_progress_done(next_step_id="kaiyu_none")
+        self._kaiyu = progress.found
+        return self.async_show_progress_done(next_step_id="kaiyu_found")
+
+    async def async_step_kaiyu_none(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Kaiyu controller not found."""
+        return self.async_show_menu(step_id="kaiyu_none", menu_options=["kaiyu", "kaiyu_manual"])
+
+    async def async_step_kaiyu_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Kaiyu controller id entered manually."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                company = bytes.fromhex(user_input[CONF_COMPANY])
+                device_id = bytes.fromhex(user_input[CONF_DEVICE])
+            except ValueError:
+                company = device_id = b""
+            if len(company) == 2 and len(device_id) == 2:
+                self._kaiyu = (company, device_id)
+                return await self.async_step_kaiyu_found()
+            errors["base"] = "invalid_kaiyu_id"
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_COMPANY, default=DEFAULT_COMPANY.hex().upper()): str,
+                vol.Required(CONF_DEVICE): str,
+            }
+        )
+        return self.async_show_form(step_id="kaiyu_manual", data_schema=data_schema, errors=errors)
+
+    async def async_step_kaiyu_found(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Kaiyu controller: name and adapters."""
+        errors: dict[str, str] = {}
+        company, device_id = self._kaiyu
+        adapters = self.coordinator.get_adapter_ids()
+        if user_input is not None:
+            if user_input[CONF_ADAPTER_IDS]:
+                await self.async_set_unique_id(f"kaiyu##{company.hex().upper()}{device_id.hex().upper()}", raise_on_progress=False)
+                self._abort_if_unique_id_configured()
+                data = {
+                    CONF_ENTRY_TYPE: ENTRY_TYPE_KAIYU,
+                    CONF_COMPANY: company.hex().upper(),
+                    CONF_DEVICE: device_id.hex().upper(),
+                    CONF_TECHNICAL: {CONF_ADAPTER_IDS: user_input[CONF_ADAPTER_IDS], CONF_REPEATS: LEARNED_REPEAT, CONF_INTERVAL: LEARNED_INTERVAL},
+                }
+                return self.async_create_entry(title=user_input[CONF_NAME], data=data)
+            errors["base"] = "missing_adapter"
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME): str,
+                vol.Required(CONF_ADAPTER_IDS, default=adapters): self._get_multi_selector(CONF_ADAPTER_IDS, adapters),
+            }
+        )
+        ph = {"company": f"0x{company.hex().upper()}", "id": f"0x{device_id.hex().upper()}"}
+        return self.async_show_form(step_id="kaiyu_found", data_schema=data_schema, errors=errors, description_placeholders=ph)
+
+    async def async_step_kaiyu_technical(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Transmission parameters of the Kaiyu controller."""
+        return await self._async_learn_technical("kaiyu_technical", user_input, self.async_step_kaiyu_save)
+
+    async def async_step_kaiyu_save(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Save the reconfigured Kaiyu controller."""
+        return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data=self._learn)
 
     async def async_step_learn_remote(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Universal BLE Remote: name and adapters."""
@@ -1221,6 +1325,9 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         if entry_data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_LEARNED:
             self._learn = {**entry_data, CONF_KEYS: list(entry_data[CONF_KEYS])}
             return await self.async_step_learn_menu()
+        if entry_data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_KAIYU:
+            self._learn = {**entry_data}
+            return await self.async_step_kaiyu_technical()
         self._data = {**entry_data}
         return await self.async_step_configure()
 

@@ -10,6 +10,7 @@ from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig,
 from .codecs.models import BleAdvEncCmd
 from .const import DOMAIN
 from .device import BleAdvDevice
+from .kaiyu_lights import BleAdvKaiyuController
 from .learned_remote import BleAdvLearnedRemote
 
 BYTE_SELECTOR = NumberSelector(NumberSelectorConfig(min=0, max=255, mode=NumberSelectorMode.BOX))
@@ -18,11 +19,11 @@ ENC_CMD_SELECTOR = {f.name: ObjectSelectorField(selector=BYTE_SELECTOR, required
 
 
 def is_learned_remote_device(hass: HomeAssistant, device_id: str) -> bool:
-    """Return True if the device_id is a Learned Remote: it has no device triggers / actions, only standard entities."""
+    """Return True if the device_id is a Learned Remote or a Kaiyu controller: no device triggers / actions, only standard entities."""
     return (
         (device_entry := dr.async_get(hass).async_get(device_id)) is not None
         and (entry := hass.config_entries.async_get_entry(device_entry.config_entry_id)) is not None
-        and isinstance(getattr(entry, "runtime_data", None), BleAdvLearnedRemote)
+        and isinstance(getattr(entry, "runtime_data", None), BleAdvLearnedRemote | BleAdvKaiyuController)
     )
 
 
