@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 PRESENCE_GAP = timedelta(hours=1)  # Silent for longer than this: considered gone, its presence restarts on next signal
 PRESENCE_MAX_DEVICES = 5000
+SAME_SIGNAL = timedelta(seconds=2)  # Signals closer than this are counted once (repeated advertisements, history re-read)
 
 
 @dataclass
@@ -57,8 +58,9 @@ class BleAdvPresenceTracker:
             dev.count = 1
             dev.sources = set()
         elif now > dev.last_seen:
+            if (now - dev.last_seen) > SAME_SIGNAL:
+                dev.count += 1
             dev.last_seen = now
-            dev.count += 1
         elif now < dev.first_seen and (dev.first_seen - now) <= self.gap:
             dev.first_seen = now  # an older signal, known only now
         if name and name.replace("-", ":").upper() != address:

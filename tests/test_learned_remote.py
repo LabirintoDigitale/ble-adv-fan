@@ -219,7 +219,7 @@ async def test_ha_bluetooth(hass: HomeAssistant, coord: BleAdvCoordinator) -> No
         assert dev.count == 2
 
     on_adv(service_info, None)
-    assert dev.count == 3
+    assert dev.count == 2  # same signal
     with mock.patch("homeassistant.components.bluetooth.async_discovered_service_info", side_effect=Exception("not ready")):
         coord.refresh_from_ha_bluetooth()
     await coord.async_final()
