@@ -249,6 +249,7 @@ async def _wait_done(flow: BleAdvConfigFlow) -> dict:
 async def test_kaiyu_flow(hass: HomeAssistant, coord: BleAdvCoordinator, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the Kaiyu config flow: listening, manual input, creation."""
     monkeypatch.setattr(BleAdvAdapter, "MAX_ADV_WAIT", 3.0)
+    await MockEspProxy(hass, "test").setup()
     flow = _flow(hass, coord)
     res = await flow.async_step_user()
     assert "kaiyu" in res["menu_options"]
