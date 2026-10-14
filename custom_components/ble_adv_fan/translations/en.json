@@ -321,7 +321,7 @@
       },
       "learn_none": {
         "title": "Nothing received",
-        "description": "No new advertisement received for the key '{key}'. Get closer to the adapter and retry.",
+        "description": "No new advertisement received for the key **{key}**. Get closer to the adapter and retry.",
         "menu_options": {
           "learn_capture_again": "Retry",
           "learn_menu": "Back"
@@ -329,7 +329,7 @@
       },
       "learn_choose": {
         "title": "Choose the captured advertisement",
-        "description": "Advertisements received while pressing '{key}', most received first (count - protocol - data). The first one is usually the right one.",
+        "description": "Advertisements received while pressing **{key}**, most received first (count - protocol - data). The first one is usually the right one.",
         "data": {
           "raw": "Advertisement"
         }
@@ -339,7 +339,7 @@
       },
       "learn_test_res": {
         "title": "Did the device react?",
-        "description": "The key '{key}' was just replayed. Did the device react?",
+        "description": "The key **{key}** was just replayed. Did the device react?",
         "menu_options": {
           "learn_save": "Yes, save the key",
           "learn_test": "Replay again",
@@ -373,8 +373,8 @@
       "test_fan": "Starting / Stopping the Fan with configuration {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Index: {index}",
       "wait_config_remote": "Please press any button (preferably Pair) on the controller within {max_seconds}s.",
       "learn_quiet": "Do NOT press anything: listening to the Bluetooth background noise ({seconds}s)...",
-      "learn_press": "Now press the key '{key}' on the remote several times (up to {seconds}s)...",
-      "learn_test": "Replaying the key '{key}'..."
+      "learn_press": "Now press the key **{key}** on the remote several times (up to {seconds}s)...",
+      "learn_test": "Replaying the key **{key}**..."
     },
     "abort": {
       "no_adapters": "No Bluetooth adapter supporting BLE Advertising has been found, Aborting.",

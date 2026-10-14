@@ -321,7 +321,7 @@
       },
       "learn_none": {
         "title": "Nessun segnale ricevuto",
-        "description": "Nessun nuovo segnale ricevuto per il tasto '{key}'. Avvicinati all'adattatore e riprova.",
+        "description": "Nessun nuovo segnale ricevuto per il tasto **{key}**. Avvicinati all'adattatore e riprova.",
         "menu_options": {
           "learn_capture_again": "Riprova",
           "learn_menu": "Indietro"
@@ -329,7 +329,7 @@
       },
       "learn_choose": {
         "title": "Scegli il segnale catturato",
-        "description": "Segnali ricevuti mentre premevi '{key}', i più ricevuti per primi (volte - protocollo - dati). Di solito il primo è quello giusto.",
+        "description": "Segnali ricevuti mentre premevi **{key}**, i più ricevuti per primi (volte - protocollo - dati). Di solito il primo è quello giusto.",
         "data": {
           "raw": "Segnale"
         }
@@ -339,7 +339,7 @@
       },
       "learn_test_res": {
         "title": "Il dispositivo ha reagito?",
-        "description": "Il tasto '{key}' è appena stato ritrasmesso. Il dispositivo ha reagito?",
+        "description": "Il tasto **{key}** è appena stato ritrasmesso. Il dispositivo ha reagito?",
         "menu_options": {
           "learn_save": "Sì, salva il tasto",
           "learn_test": "Ritrasmetti di nuovo",
@@ -373,8 +373,8 @@
       "test_fan": "Accendo / spengo il ventilatore con la configurazione {nb}/{tot}:\n\n    Codec: {codec}\n    Id: {id}\n    Indice: {index}",
       "wait_config_remote": "Premi un tasto qualsiasi (meglio Abbina) sul controller entro {max_seconds}s.",
       "learn_quiet": "NON premere nulla: ascolto il rumore Bluetooth di fondo ({seconds}s)...",
-      "learn_press": "Ora premi più volte il tasto '{key}' sul telecomando (fino a {seconds}s)...",
-      "learn_test": "Ritrasmetto il tasto '{key}'..."
+      "learn_press": "Ora premi più volte il tasto **{key}** sul telecomando (fino a {seconds}s)...",
+      "learn_test": "Ritrasmetto il tasto **{key}**..."
     },
     "abort": {
       "no_adapters": "Nessun adattatore Bluetooth compatibile con BLE Advertising trovato, annullo.",
