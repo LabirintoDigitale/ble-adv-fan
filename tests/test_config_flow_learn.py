@@ -6,6 +6,8 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
 from unittest import mock
 
+import pytest
+from ble_adv_fan.adapters import BleAdvAdapter
 from ble_adv_fan.codecs.models import BleAdvAdvertisement
 from ble_adv_fan.config_flow import BleAdvConfigFlow, BleAdvLearnProgress
 from ble_adv_fan.const import (
@@ -41,6 +43,15 @@ async def _wait_done(step: Callable[[], Awaitable[ConfigFlowResult]], max_loops:
             return res
         await asyncio.sleep(0.05)
     raise AssertionError("Progress never ended")
+
+
+async def _drain(coord: BleAdvCoordinator) -> None:
+    adapter = coord.bt_managers[1].adapters["esp/test"]
+    try:
+        await asyncio.wait_for(adapter.drain(), 5)
+    except TimeoutError as exc:
+        msg = f"Adapter not drained: {coord.bt_managers[1].diagnostic_dump()}"
+        raise AssertionError(msg) from exc
 
 
 def _flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> BleAdvConfigFlow:
@@ -82,8 +93,10 @@ async def test_learn_progress(hass: HomeAssistant, coord: BleAdvCoordinator) -> 
     assert [(cand.raw, cand.count) for cand in cands] == [(KEY.to_raw(), 3), (THIRD.to_raw(), 1)]
 
 
-async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> None:
+async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test the full Universal BLE Remote flow."""
+    # A learned key is advertised in one single session, longer than the max wait set by other tests
+    monkeypatch.setattr(BleAdvAdapter, "MAX_ADV_WAIT", 3.0)
     proxy = MockEspProxy(hass, "test")
     await proxy.setup()
     flow = _flow(hass, coord)
@@ -121,7 +134,7 @@ async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> None
     assert res["type"] == FlowResultType.SHOW_PROGRESS
     res = await _wait_done(flow.async_step_learn_test)
     assert res["step_id"] == "learn_test_res"
-    await coord.bt_managers[1].adapters["esp/test"].drain()
+    await _drain(coord)
     assert {call["raw"] for call in proxy.get_adv_calls()} == {KEY.to_raw().hex()}
     res = await flow.async_step_learn_test_res()
     assert res["menu_options"][0] == "learn_save"
@@ -133,7 +146,7 @@ async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> None
     assert res["type"] == FlowResultType.SHOW_PROGRESS
     res = await _wait_done(flow.async_step_learn_test)
     assert res["step_id"] == "learn_test_res"
-    await coord.bt_managers[1].adapters["esp/test"].drain()
+    await _drain(coord)
     assert len(proxy.get_adv_calls()) == 1
     res = await flow.async_step_learn_technical()
     assert res["step_id"] == "learn_technical"
