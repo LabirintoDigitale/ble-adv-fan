@@ -95,9 +95,11 @@ I tasti si aggiungono o eliminano in seguito con **Riconfigura**.
 Limiti: funziona solo con dispositivi controllati via BLE Advertising (non con quelli che richiedono una connessione Bluetooth). I telecomandi con codice variabile (rolling code) possono rifiutare un segnale ripetuto. Con un proxy ESPHome, lo stesso segnale ripetuto entro `ignored_duration` (60 s di default) può non essere inoltrato a Home Assistant: aspetta un minuto tra due catture dello stesso tasto.
 
 ## Dispositivi Bluetooth presenti da almeno 1 ora (solo BLE ADV Fan)
-In **Aggiungi integrazione → BLE ADV Fan → Strumenti → Dispositivi Bluetooth presenti da almeno 1 ora** trovi l'elenco dei dispositivi Bluetooth visti senza interruzioni da almeno un'ora (MAC, nome, RSSI, da quanto tempo, da quale adattatore). Un dispositivo non visto per 10 minuti è considerato andato via. I dispositivi che cambiano indirizzo di continuo, come i telefoni, quindi non compaiono.
+In **Aggiungi integrazione → BLE ADV Fan → Strumenti → Dispositivi Bluetooth presenti da almeno 1 ora** trovi l'elenco dei dispositivi Bluetooth presenti da più di un'ora che continuano a mandare un segnale ogni tanto: tra il primo e l'ultimo segnale ricevuto è passata almeno un'ora. Per ognuno vedi MAC, nome, RSSI, da quanto è presente, quando è arrivato l'ultimo segnale, quanti segnali sono arrivati e quale adattatore lo ha ricevuto.
 
-I dati arrivano dagli adattatori BLE ADV e, se presente, dall'integrazione Bluetooth di Home Assistant. Il monitoraggio parte all'avvio di Home Assistant: dopo un riavvio serve un'ora prima che i dispositivi compaiano.
+Un dispositivo resta in elenco finché non sta in silenzio per più di un'ora; dopo, è considerato andato via e il conteggio riparte al segnale successivo. I dispositivi che cambiano indirizzo di continuo, come i telefoni, non compaiono.
+
+I dati arrivano dagli adattatori BLE ADV e, se presente, dall'integrazione Bluetooth di Home Assistant (letta anche ogni 5 minuti). Il monitoraggio parte all'avvio di Home Assistant: dopo un riavvio serve un'ora prima che i dispositivi compaiano.
 
 ## Future Developments
 Future developments are tracked in [github feature requests](https://github.com/NicoIIT/ha-ble-adv/issues?q=is%3Aissue%20state%3Aopen%20label%3Aenhancement), do not hesitate to vote for them if you need them giving it a :thumbsup:, or open new ones!

@@ -13,7 +13,8 @@ from typing import Any, Protocol
 
 from homeassistant.components.diagnostics import async_format_manifest
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.system_info import async_get_system_info
 from homeassistant.loader import async_get_integration
 
@@ -28,6 +29,7 @@ from .shelly_adapters import BleAdvShellyBtManager
 _LOGGER = logging.getLogger(__name__)
 
 HA_BLUETOOTH_DOMAIN = "bluetooth"
+HA_BLUETOOTH_REFRESH = timedelta(minutes=5)
 
 type RawCaptureCallback = Callable[[str, str, bytes, BleAdvAdvertisement], None]
 
@@ -216,22 +218,51 @@ class BleAdvCoordinator:
 
     def ensure_ha_bluetooth(self) -> bool:
         """Follow the advertisements received by the HA Bluetooth integration, if loaded. Return True if followed."""
-        if self._cancel_ha_bt is not None:
-            return True
-        if HA_BLUETOOTH_DOMAIN not in self.hass.config.components:
-            return False
+        if self._cancel_ha_bt is None:
+            if HA_BLUETOOTH_DOMAIN not in self.hass.config.components:
+                return False
+            try:
+                from homeassistant.components import bluetooth  # noqa: PLC0415
+
+                def _on_ha_bt_adv(service_info: bluetooth.BluetoothServiceInfoBleak, _: bluetooth.BluetoothChange) -> None:
+                    self.presence.record(service_info.address, service_info.source, service_info.name, service_info.rssi)
+
+                @callback
+                def _on_refresh(_: datetime) -> None:
+                    self.refresh_from_ha_bluetooth()
+
+                cancel_adv = bluetooth.async_register_callback(self.hass, _on_ha_bt_adv, None, bluetooth.BluetoothScanningMode.PASSIVE)
+                cancel_refresh = async_track_time_interval(self.hass, _on_refresh, HA_BLUETOOTH_REFRESH)
+
+                def _cancel() -> None:
+                    cancel_adv()
+                    cancel_refresh()
+
+                self._cancel_ha_bt = _cancel
+            except Exception:
+                self._add_diag("Cannot follow the HA Bluetooth integration", logging.INFO)
+                _LOGGER.exception("Cannot follow the HA Bluetooth integration")
+                return False
+        self.refresh_from_ha_bluetooth()
+        return True
+
+    def refresh_from_ha_bluetooth(self) -> None:
+        """Record the last signal of the devices known by the HA Bluetooth integration.
+
+        It does not call back on the unchanged advertisements, but keeps the time of the last one.
+        """
         try:
+            from bluetooth_data_tools import monotonic_time_coarse  # noqa: PLC0415
             from homeassistant.components import bluetooth  # noqa: PLC0415
 
-            def _on_ha_bt_adv(service_info: bluetooth.BluetoothServiceInfoBleak, _: bluetooth.BluetoothChange) -> None:
-                self.presence.record(service_info.address, service_info.source, service_info.name, service_info.rssi)
-
-            self._cancel_ha_bt = bluetooth.async_register_callback(self.hass, _on_ha_bt_adv, None, bluetooth.BluetoothScanningMode.PASSIVE)
+            now = datetime.now()
+            mono_now = monotonic_time_coarse()
+            for info in bluetooth.async_discovered_service_info(self.hass, connectable=False):
+                seen = now - timedelta(seconds=max(0.0, mono_now - info.time))
+                self.presence.record(info.address, info.source, info.name, info.rssi, seen)
         except Exception:
-            self._add_diag("Cannot follow the HA Bluetooth integration", logging.INFO)
-            _LOGGER.exception("Cannot follow the HA Bluetooth integration")
-            return False
-        return True
+            self._add_diag("Cannot refresh from the HA Bluetooth integration", logging.INFO)
+            _LOGGER.exception("Cannot refresh from the HA Bluetooth integration")
 
     async def async_final(self) -> None:
         """Async Final: Clean-up."""
@@ -303,13 +334,13 @@ class BleAdvCoordinator:
         """Unregister a listener of all raw advertisements."""
         self._raw_listeners = [x for x in self._raw_listeners if x is not listener]
 
-    def start_raw_capture(self, callback: RawCaptureCallback, max_duration: float) -> None:
+    def start_raw_capture(self, clbk: RawCaptureCallback, max_duration: float) -> None:
         """Call the callback on each raw advertisement received (no de-duplication), during max_duration seconds at most."""
-        self._raw_captures[callback] = datetime.now() + timedelta(seconds=max_duration)
+        self._raw_captures[clbk] = datetime.now() + timedelta(seconds=max_duration)
 
-    def stop_raw_capture(self, callback: RawCaptureCallback) -> None:
+    def stop_raw_capture(self, clbk: RawCaptureCallback) -> None:
         """Stop a raw capture."""
-        self._raw_captures.pop(callback, None)
+        self._raw_captures.pop(clbk, None)
 
     async def advertise(self, adapter_id: str | None, queue_id: str, qi: BleAdvQueueItem) -> None:
         """Advertise."""

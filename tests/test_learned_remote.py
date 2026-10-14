@@ -27,6 +27,7 @@ from ble_adv_fan.device_trigger import async_get_triggers
 from ble_adv_fan.event import async_setup_entry as event_setup_entry
 from ble_adv_fan.helpers import is_learned_remote_device
 from ble_adv_fan.learned_remote import BleAdvLearnedButton, BleAdvLearnedEvent, BleAdvLearnedKey, BleAdvLearnedRemote
+from bluetooth_data_tools import monotonic_time_coarse
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 
@@ -184,27 +185,46 @@ async def test_raw_capture(coord: BleAdvCoordinator) -> None:
 
 
 async def test_ha_bluetooth(hass: HomeAssistant, coord: BleAdvCoordinator) -> None:
-    """Test following the HA Bluetooth integration."""
+    """Test following the HA Bluetooth integration: advertisements and periodic refresh from its history."""
     assert not coord.ensure_ha_bluetooth()
     hass.config.components.add("bluetooth")
     with mock.patch("homeassistant.components.bluetooth.async_register_callback", side_effect=Exception("not ready")):
         assert not coord.ensure_ha_bluetooth()
-    cancel = mock.MagicMock()
-    with mock.patch("homeassistant.components.bluetooth.async_register_callback", return_value=cancel) as reg:
-        assert coord.ensure_ha_bluetooth()
-        assert coord.ensure_ha_bluetooth()
-        reg.assert_called_once()
-        on_adv = reg.call_args[0][1]
+
     service_info = mock.MagicMock()
     service_info.address = "AA:BB:CC:DD:EE:FF"
     service_info.source = "hci0"
     service_info.name = "Sensor"
     service_info.rssi = -50
+    service_info.time = monotonic_time_coarse() - 600
+    cancel_adv = mock.MagicMock()
+    cancel_refresh = mock.MagicMock()
+    with (
+        mock.patch("homeassistant.components.bluetooth.async_register_callback", return_value=cancel_adv) as reg,
+        mock.patch("ble_adv_fan.coordinator.async_track_time_interval", return_value=cancel_refresh) as track,
+        mock.patch("homeassistant.components.bluetooth.async_discovered_service_info", return_value=[service_info]) as history,
+    ):
+        assert coord.ensure_ha_bluetooth()
+        assert coord.ensure_ha_bluetooth()
+        reg.assert_called_once()
+        on_adv = reg.call_args[0][1]
+        on_refresh = track.call_args[0][1]
+        assert history.call_count == 2
+        dev = coord.presence.present_since(timedelta(0))[0]
+        assert (dev.address, dev.name, dev.rssi, dev.sources) == ("AA:BB:CC:DD:EE:FF", "Sensor", -50, {"hci0"})
+        assert timedelta(minutes=9) < (datetime.now() - dev.last_seen) < timedelta(minutes=11)
+        service_info.time = monotonic_time_coarse()
+        on_refresh(datetime.now())
+        assert (datetime.now() - dev.last_seen) < timedelta(minutes=1)
+        assert dev.count == 2
+
     on_adv(service_info, None)
-    devs = coord.presence.present_since(timedelta(0))
-    assert [(dev.address, dev.name, dev.rssi, dev.sources) for dev in devs] == [("AA:BB:CC:DD:EE:FF", "Sensor", -50, {"hci0"})]
+    assert dev.count == 3
+    with mock.patch("homeassistant.components.bluetooth.async_discovered_service_info", side_effect=Exception("not ready")):
+        coord.refresh_from_ha_bluetooth()
     await coord.async_final()
-    cancel.assert_called_once()
+    cancel_adv.assert_called_once()
+    cancel_refresh.assert_called_once()
 
 
 async def test_adapter_change_availability(coord: BleAdvCoordinator) -> None:

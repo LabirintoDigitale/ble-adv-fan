@@ -564,7 +564,7 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_menu(step_id="tools", menu_options=["diag", "listen_raw", "bt_devices", *supp_menus])
 
     async def async_step_bt_devices(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """List the Bluetooth devices continuously present for at least one hour."""
+        """List the Bluetooth devices present for at least one hour, and still sending a signal from time to time."""
         ha_bt = self.coordinator.ensure_ha_bluetooth()
         now = datetime.now()
         presence = self.coordinator.presence
@@ -577,19 +577,20 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
             return f"{minutes // 60}h {minutes % 60:02d}m"
 
         rows = [
-            f"| `{dev.address}` | {dev.name or '-'} | {dev.rssi if dev.rssi is not None else '-'} | {_dur(now - dev.first_seen)} | {', '.join(sorted(dev.sources))} |"
+            f"| `{dev.address}` | {dev.name or '-'} | {dev.rssi if dev.rssi is not None else '-'} | {_dur(now - dev.first_seen)} "
+            f"| {_dur(now - dev.last_seen)} | {dev.count} | {', '.join(sorted(dev.sources))} |"
             for dev in devs[:PRESENCE_MAX_ROWS]
         ]
         if len(devs) > PRESENCE_MAX_ROWS:
-            rows.append(f"| ... +{len(devs) - PRESENCE_MAX_ROWS} | | | | |")
-        table = "\n".join(["| MAC | Name | RSSI | Since | Seen by |", "|---|---|---|---|---|", *rows]) if rows else ""
+            rows.append(f"| ... +{len(devs) - PRESENCE_MAX_ROWS} | | | | | | |")
         ph = {
             "count": str(len(devs)),
             "since": presence.started.strftime("%d/%m/%Y %H:%M"),
             "monitoring": _dur(now - presence.started),
             "tracked": str(len(presence)),
+            "gap": str(int(presence.gap.total_seconds() // 60)),
             "ha_bt": "✅" if ha_bt else "❌",
-            "table": table,
+            "rows": "\n".join(rows),
         }
         return self.async_show_menu(step_id="bt_devices", menu_options=["bt_devices", "tools"], description_placeholders=ph)
 

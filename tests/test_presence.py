@@ -6,16 +6,20 @@ from datetime import datetime, timedelta
 from ble_adv_fan.presence import BleAdvPresenceTracker
 
 
-def test_presence_record() -> None:
-    """Test recording devices and their continuous presence."""
+def test_presence_from_time_to_time() -> None:
+    """Test a device sending a signal from time to time is present."""
     now = datetime.now()
-    tracker = BleAdvPresenceTracker(timedelta(minutes=10))
-    tracker.record("aa:bb:cc:dd:ee:01", "hci/1", "AA-BB-CC-DD-EE-01", -60, now - timedelta(minutes=70))
-    for minutes in range(65, -1, -5):
-        tracker.record("AA:BB:CC:DD:EE:01", "esp/proxy", None, None, now - timedelta(minutes=minutes))
-    tracker.record("AA:BB:CC:DD:EE:02", "hci/1", "Lamp", -70, now - timedelta(minutes=30))
-    tracker.record("AA:BB:CC:DD:EE:02", "hci/1", None, None, now)
-    assert len(tracker) == 2
+    tracker = BleAdvPresenceTracker(timedelta(hours=1))
+    # one signal every 25 minutes, over 75 minutes
+    for minutes in (75, 50, 25, 0):
+        tracker.record("aa:bb:cc:dd:ee:01", "hci/1", "AA-BB-CC-DD-EE-01", -60, now - timedelta(minutes=minutes))
+    tracker.record("AA:BB:CC:DD:EE:01", "esp/proxy", None, None, now)  # same signal from another source
+    # signals over 40 minutes only
+    tracker.record("AA:BB:CC:DD:EE:02", "hci/1", "Lamp", -70, now - timedelta(minutes=50))
+    tracker.record("AA:BB:CC:DD:EE:02", "hci/1", None, None, now - timedelta(minutes=10))
+    # a single signal
+    tracker.record("AA:BB:CC:DD:EE:03", "hci/1", None, None, now - timedelta(minutes=59))
+    assert len(tracker) == 3
 
     devs = tracker.present_since(timedelta(hours=1), now)
     assert [dev.address for dev in devs] == ["AA:BB:CC:DD:EE:01"]
@@ -23,13 +27,37 @@ def test_presence_record() -> None:
     assert dev.name is None  # the name was only the address
     assert dev.rssi == -60
     assert dev.sources == {"hci/1", "esp/proxy"}
-    assert dev.count == 15
-    assert dev.first_seen == now - timedelta(minutes=70)
+    assert dev.count == 4
+    assert dev.first_seen == now - timedelta(minutes=75)
+    assert dev.last_seen == now
 
-    devs = tracker.present_since(timedelta(minutes=20), now)
-    assert [dev.address for dev in devs] == ["AA:BB:CC:DD:EE:01"]  # gap of 30 minutes: EE:02 presence restarted
-    tracker.record("AA:BB:CC:DD:EE:02", "hci/1", None, None, now)
-    assert tracker.present_since(timedelta(0), now)[1].name == "Lamp"
+    assert [dev.address for dev in tracker.present_since(timedelta(minutes=30), now)] == ["AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02"]
+
+
+def test_presence_gone_and_back() -> None:
+    """Test a device silent for longer than the gap is gone, and its presence restarts when back."""
+    now = datetime.now()
+    tracker = BleAdvPresenceTracker(timedelta(hours=1))
+    tracker.record("01", "hci/1", "Lamp", -70, now - timedelta(hours=3))
+    tracker.record("01", "hci/1", None, None, now - timedelta(hours=2))
+    tracker.record("01", "esp/proxy", None, None, now - timedelta(minutes=5))
+    dev = tracker.present_since(timedelta(0), now)[0]
+    assert (dev.name, dev.first_seen, dev.count, dev.sources) == ("Lamp", now - timedelta(minutes=5), 1, {"esp/proxy"})
+    assert tracker.present_since(timedelta(0), now + timedelta(minutes=56)) == []  # silent for too long: gone
+
+
+def test_presence_older_signal() -> None:
+    """Test a signal older than the first one, known later (from the HA Bluetooth history)."""
+    now = datetime.now()
+    tracker = BleAdvPresenceTracker(timedelta(hours=1))
+    tracker.record("01", "s", now=now - timedelta(minutes=10))
+    tracker.record("01", "s", now=now)
+    tracker.record("01", "s", now=now - timedelta(minutes=50))
+    tracker.record("01", "s", now=now - timedelta(minutes=5))
+    dev = tracker.present_since(timedelta(0), now)[0]
+    assert (dev.first_seen, dev.last_seen, dev.count) == (now - timedelta(minutes=50), now, 2)
+    tracker.record("01", "s", now=now - timedelta(hours=3))  # too old: ignored
+    assert dev.first_seen == now - timedelta(minutes=50)
 
 
 def test_presence_prune() -> None:

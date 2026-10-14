@@ -295,7 +295,7 @@
       },
       "bt_devices": {
         "title": "Bluetooth devices present for at least 1 hour",
-        "description": "**{count}** devices seen continuously for at least 1 hour (a device not seen for 10 minutes is considered gone).\n\nMonitoring since {since} ({monitoring}), {tracked} devices currently tracked. HA Bluetooth integration followed: {ha_bt}\n\n{table}",
+        "description": "**{count}** devices present for at least 1 hour: their signals span at least 1 hour, the device can stay silent up to {gap} minutes in between (silent for longer: considered gone).\n\nMonitoring since {since} ({monitoring}), {tracked} devices currently tracked. HA Bluetooth integration followed: {ha_bt}\n\n| MAC | Name | RSSI | Present for | Last signal | Signals | Seen by |\n|---|---|---|---|---|---|---|\n{rows}",
         "menu_options": {
           "bt_devices": "Refresh",
           "tools": "Back to Tools"

@@ -295,7 +295,7 @@
       },
       "bt_devices": {
         "title": "Dispositivi Bluetooth presenti da almeno 1 ora",
-        "description": "**{count}** dispositivi visti senza interruzioni da almeno 1 ora (un dispositivo non visto per 10 minuti è considerato andato via).\n\nMonitoraggio attivo dal {since} ({monitoring}), {tracked} dispositivi tracciati ora. Integrazione Bluetooth di HA seguita: {ha_bt}\n\n{table}",
+        "description": "**{count}** dispositivi presenti da almeno 1 ora: i loro segnali coprono almeno 1 ora, e tra un segnale e l'altro il dispositivo può restare in silenzio fino a {gap} minuti (in silenzio più a lungo: considerato andato via).\n\nMonitoraggio attivo dal {since} ({monitoring}), {tracked} dispositivi tracciati ora. Integrazione Bluetooth di HA seguita: {ha_bt}\n\n| MAC | Nome | RSSI | Presente da | Ultimo segnale | Segnali | Visto da |\n|---|---|---|---|---|---|---|\n{rows}",
         "menu_options": {
           "bt_devices": "Aggiorna",
           "tools": "Torna agli strumenti"

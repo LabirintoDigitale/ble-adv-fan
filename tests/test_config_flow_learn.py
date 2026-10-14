@@ -183,7 +183,7 @@ async def test_bt_devices(hass: HomeAssistant, coord: BleAdvCoordinator) -> None
     assert "bt_devices" in res["menu_options"]
     res = await flow.async_step_bt_devices()
     assert res["description_placeholders"]["count"] == "0"
-    assert res["description_placeholders"]["table"] == ""
+    assert res["description_placeholders"]["rows"] == ""
     assert res["description_placeholders"]["ha_bt"] == "❌"
 
     now = datetime.now()
@@ -194,14 +194,15 @@ async def test_bt_devices(hass: HomeAssistant, coord: BleAdvCoordinator) -> None
     coord.presence.record("AA:BB:CC:DD:EE:02", "hci/1", None, None, now - timedelta(minutes=30))
     for i in range(120):
         coord.presence.record(f"AA:BB:CC:DD:FF:{i:02X}", "hci/1", None, -80, now - timedelta(hours=2))
+        coord.presence.record(f"AA:BB:CC:DD:FF:{i:02X}", "hci/1", None, -80, now - timedelta(hours=1))
     res = await flow.async_step_bt_devices()
     ph = res["description_placeholders"]
     assert res["menu_options"] == ["bt_devices", "tools"]
     assert ph["count"] == "121"
     assert ph["tracked"] == "122"
     assert ph["monitoring"].startswith("2d 0h")
-    lines = ph["table"].split("\n")
-    assert lines[2].startswith("| `AA:BB:CC:DD:EE:01` | Lamp | -60 | 1d 2h 0")
-    assert lines[2].endswith("| esp/proxy, hci/1 |")
-    assert lines[3].startswith("| `AA:BB:CC:DD:FF:00` | - | -80 | 2h 0")
-    assert lines[-1] == "| ... +21 | | | | |"
+    assert ph["gap"] == "4320"
+    lines = ph["rows"].split("\n")
+    assert lines[0] == "| `AA:BB:CC:DD:EE:01` | Lamp | -60 | 1d 2h 05m | 0h 00m | 2 | esp/proxy, hci/1 |"
+    assert lines[1] == "| `AA:BB:CC:DD:FF:00` | - | -80 | 2h 00m | 1h 00m | 2 | hci/1 |"
+    assert lines[-1] == "| ... +21 | | | | | | |"
