@@ -603,6 +603,44 @@
           "description": "The minimum duration before which another advertisement can be sent with the same Adapter/Device, in ms."
         }
       }
+    },
+    "send_command": {
+      "name": "Send command",
+      "description": "Send a raw command (cmd, param, args) to a device, with its codec and id: to test unknown commands.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Device"
+        },
+        "cmd": {
+          "name": "Command",
+          "description": "Command"
+        },
+        "param": {
+          "name": "param",
+          "description": "param"
+        },
+        "arg0": {
+          "name": "arg0",
+          "description": "arg0"
+        },
+        "arg1": {
+          "name": "arg1",
+          "description": "arg1"
+        },
+        "arg2": {
+          "name": "arg2",
+          "description": "arg2"
+        },
+        "arg3": {
+          "name": "arg3",
+          "description": "arg3"
+        },
+        "arg4": {
+          "name": "arg4",
+          "description": "arg4"
+        }
+      }
     }
   },
   "device_automation": {

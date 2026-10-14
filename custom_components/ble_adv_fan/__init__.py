@@ -4,7 +4,7 @@ import logging
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_DEVICE, CONF_NAME, Platform
+from homeassistant.const import CONF_DEVICE, CONF_DEVICE_ID, CONF_NAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import NumberSelector, NumberSelectorConfig
@@ -12,7 +12,7 @@ from homeassistant.helpers.singleton import singleton
 from homeassistant.helpers.typing import ConfigType
 
 from .codecs import dyn_codec_params, get_codecs
-from .codecs.models import BleAdvCodec, BleAdvConfig
+from .codecs.models import BleAdvCodec, BleAdvConfig, BleAdvEncCmd
 from .const import (
     CONF_ADAPTER_ID,
     CONF_ADAPTER_IDS,
@@ -68,6 +68,15 @@ from .learned_remote import BleAdvLearnedKey, BleAdvLearnedRemote
 _LOGGER = logging.getLogger(__name__)
 
 INJECT_RAW_SERVICE_NAME = "inject_raw"
+SEND_COMMAND_SERVICE_NAME = "send_command"
+_BYTE = vol.All(vol.Coerce(int), vol.Range(min=0, max=255))
+SEND_COMMAND_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_DEVICE_ID): cv.string,
+        vol.Required("cmd"): _BYTE,
+        **{vol.Optional(arg, default=0): _BYTE for arg in ("param", "arg0", "arg1", "arg2", "arg3", "arg4")},
+    }
+)
 INJECT_RAW_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ADAPTER_ID): str,
@@ -140,6 +149,18 @@ async def async_setup(hass: HomeAssistant, conf: ConfigType) -> bool:
             raise vol.Invalid(msg)
 
     hass.services.async_register(DOMAIN, INJECT_RAW_SERVICE_NAME, inject_raw, INJECT_RAW_SCHEMA)
+
+    async def send_command(call: ServiceCall) -> None:
+        """Send a raw command (cmd / param / args) to a device, with its codec and config: to test unknown commands."""
+        from .helpers import get_device_from_id  # noqa: PLC0415
+
+        device = await get_device_from_id(hass, call.data[CONF_DEVICE_ID])
+        if not isinstance(device, BleAdvDevice):
+            msg = "Only for the devices using a codec"
+            raise vol.Invalid(msg)
+        await device.apply_cmd(BleAdvEncCmd(**{key: value for key, value in call.data.items() if key != CONF_DEVICE_ID}))
+
+    hass.services.async_register(DOMAIN, SEND_COMMAND_SERVICE_NAME, send_command, SEND_COMMAND_SCHEMA)
     return True
 
 

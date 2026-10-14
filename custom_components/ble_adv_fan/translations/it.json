@@ -641,6 +641,44 @@
           "description": "La durata minima prima di poter inviare un altro segnale con lo stesso adattatore/dispositivo, in ms."
         }
       }
+    },
+    "send_command": {
+      "name": "Invia comando",
+      "description": "Invia un comando grezzo (comando, parametro, argomenti) a un dispositivo, con il suo protocollo e ID: per provare comandi sconosciuti.",
+      "fields": {
+        "device_id": {
+          "name": "Dispositivo",
+          "description": "Dispositivo"
+        },
+        "cmd": {
+          "name": "Comando",
+          "description": "Comando"
+        },
+        "param": {
+          "name": "param",
+          "description": "param"
+        },
+        "arg0": {
+          "name": "arg0",
+          "description": "arg0"
+        },
+        "arg1": {
+          "name": "arg1",
+          "description": "arg1"
+        },
+        "arg2": {
+          "name": "arg2",
+          "description": "arg2"
+        },
+        "arg3": {
+          "name": "arg3",
+          "description": "arg3"
+        },
+        "arg4": {
+          "name": "arg4",
+          "description": "arg4"
+        }
+      }
     }
   },
   "device_automation": {

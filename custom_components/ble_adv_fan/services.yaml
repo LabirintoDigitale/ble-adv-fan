@@ -36,3 +36,60 @@ inject_raw:
         number:
           min: 100
           max: 2000
+send_command:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ble_adv_fan
+    cmd:
+      required: true
+      example: 34
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    param:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    arg0:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    arg1:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    arg2:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    arg3:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    arg4:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
