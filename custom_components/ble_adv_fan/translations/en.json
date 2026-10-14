@@ -550,10 +550,26 @@
         }
       },
       "kaiyu_line": {
-        "name": "Output {line}"
+        "name": "Output {line}",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "steady": "Steady",
+              "blink": "Blink"
+            }
+          }
+        }
       },
       "kaiyu_all": {
-        "name": "All outputs"
+        "name": "All outputs",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "steady": "Steady",
+              "blink": "Blink"
+            }
+          }
+        }
       }
     }
   },

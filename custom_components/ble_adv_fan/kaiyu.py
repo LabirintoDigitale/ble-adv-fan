@@ -14,6 +14,8 @@ from random import randint
 LINES_NB = 12
 LINE_ON = 2
 LINE_OFF = 1
+LINE_BLINK = 3  # fast blink
+LINE_VALUES = (LINE_OFF, LINE_ON, LINE_BLINK)
 MODE_ALL = bytes([0x55, 0xAA])
 MODE_LINES = bytes([0x00, 0x00])
 DEFAULT_COMPANY = bytes([0x00, 0xC2])
@@ -101,7 +103,12 @@ class KaiyuCommand:
 
     mode: bytes
     device_id: bytes
-    lines: list[bool | None]  # None: unknown output value (not ON / OFF)
+    values: list[int]  # value of each output: LINE_OFF, LINE_ON, LINE_BLINK, or unknown
+
+    @property
+    def lines(self) -> list[bool | None]:
+        """Return if each output is lit, None if its value is unknown."""
+        return [None if value not in LINE_VALUES else value != LINE_OFF for value in self.values]
 
 
 def _offsets(seed: int) -> tuple[int, ...]:
@@ -109,10 +116,10 @@ def _offsets(seed: int) -> tuple[int, ...]:
     return (_TAB_37[a], _TAB_37[a + 1], _TAB_38[b], _TAB_39[b], _TAB_39[b + 1], _TAB_38[c], _TAB_38[c + 1], _TAB_38[c + 3] - 1)
 
 
-def kaiyu_encode(mode: bytes, device_id: bytes, lines: list[bool], seed: int | None = None) -> bytes:
-    """Encode the state of the 12 outputs into the 14 bytes payload."""
+def kaiyu_encode(mode: bytes, device_id: bytes, lines: list[bool] | list[int], seed: int | None = None) -> bytes:
+    """Encode the state (ON / OFF) or the value of the 12 outputs into the 14 bytes payload."""
     seed = randint(1, 256) if seed is None else seed
-    nibbles = [LINE_ON if on else LINE_OFF for on in lines]
+    nibbles = [(LINE_ON if line else LINE_OFF) if isinstance(line, bool) else line for line in lines]
     values = [(nibbles[2 * i] << 4) | nibbles[2 * i + 1] for i in range(LINES_NB // 2)] + [0]
     offs = _offsets(seed)
     payload = bytearray(PAYLOAD_LEN)
@@ -136,8 +143,7 @@ def kaiyu_decode(payload: bytes) -> KaiyuCommand | None:
     values = [(payload[pos] - off) & 0xFF for pos, off in zip((4, 5, 6, 7, 8), offs, strict=False)]
     values += [(payload[11] - offs[5]) & 0xFF]
     nibbles = [n for value in values for n in (value >> 4, value & 0x0F)]
-    lines = [True if n == LINE_ON else False if n == LINE_OFF else None for n in nibbles]
-    return KaiyuCommand(bytes(payload[0:2]), bytes(payload[2:4]), lines)
+    return KaiyuCommand(bytes(payload[0:2]), bytes(payload[2:4]), nibbles)
 
 
 def kaiyu_build_adv(company: bytes, payload: bytes) -> bytes:

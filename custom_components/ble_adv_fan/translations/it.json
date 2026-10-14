@@ -588,10 +588,26 @@
         }
       },
       "kaiyu_line": {
-        "name": "Linea {line}"
+        "name": "Linea {line}",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "steady": "Fisso",
+              "blink": "Lampeggio"
+            }
+          }
+        }
       },
       "kaiyu_all": {
-        "name": "Tutte le linee"
+        "name": "Tutte le linee",
+        "state_attributes": {
+          "effect": {
+            "state": {
+              "steady": "Fisso",
+              "blink": "Lampeggio"
+            }
+          }
+        }
       }
     }
   },

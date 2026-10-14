@@ -117,8 +117,8 @@ def test_invalid_packets() -> None:
     unknown = bytearray(kaiyu_encode(MODE_LINES, DEVICE_ID, [True] * 12, 5))
     cmd = kaiyu_decode(bytes(unknown))
     assert cmd is not None
-    unknown[4] = (unknown[4] + 0x10) & 0xFF  # output 1 value 3: unknown
-    unknown[9] = (unknown[9] + 0x10) & 0xFF
+    unknown[4] = (unknown[4] + 0x20) & 0xFF  # output 1 value 4: unknown
+    unknown[9] = (unknown[9] + 0x20) & 0xFF
     cmd = kaiyu_decode(bytes(unknown))
     assert cmd is not None
     assert cmd.lines[0] is None
@@ -160,7 +160,7 @@ async def test_controller_send(hass: HomeAssistant, coord: BleAdvCoordinator) ->
     assert (parsed[1].mode, parsed[1].lines) == (MODE_ALL, [True] * 12)
     await lights[0].async_turn_off()
     await lights[2].async_turn_off()
-    assert ctrl.lines == [False] * 12
+    assert ctrl.values == [1] * 12
     await coord.bt_managers[1].adapters["esp/test"].drain()
 
 
@@ -173,7 +173,7 @@ async def test_controller_follows_app(hass: HomeAssistant, coord: BleAdvCoordina
     light.async_write_ha_state = mock.MagicMock()
     coord.add_raw_listener(ctrl)
     await coord.handle_raw_adv("esp/test", "11:22:33:44:55:66", bytes.fromhex(LINE_1))
-    assert ctrl.lines == [True] + [False] * 11
+    assert ctrl.values == [2] + [1] * 11
     light.async_write_ha_state.assert_called_once()
     await coord.handle_raw_adv("esp/test", "11:22:33:44:55:66", bytes.fromhex(LINE_1))  # no change
     light.async_write_ha_state.assert_called_once()
@@ -182,7 +182,7 @@ async def test_controller_follows_app(hass: HomeAssistant, coord: BleAdvCoordina
     await coord.handle_raw_adv("esp/test", "11:22:33:44:55:68", other_id)  # other controller
     await coord.handle_raw_adv("esp/test", "11:22:33:44:55:69", bytes.fromhex("020106030201A20C1601A200BFE48D9CD6AE5FF1"))
     await coord.handle_raw_adv("esp/test", "11:22:33:44:55:6A", bytes.fromhex("0201021BFF00C2") + bytes(24))
-    assert ctrl.lines == [True] + [False] * 11
+    assert ctrl.values == [2] + [1] * 11
     ctrl.update_availability()
     assert light.async_write_ha_state.call_count == 2
     coord.remove_raw_listener(ctrl)
@@ -197,12 +197,12 @@ async def test_light_restore(hass: HomeAssistant, coord: BleAdvCoordinator) -> N
     last.state = "on"
     with mock.patch.object(BleAdvKaiyuLight, "async_get_last_state", return_value=last):
         await light.async_added_to_hass()
-    assert ctrl.lines[3]
+    assert ctrl.values[3] == 2
     all_light = BleAdvKaiyuLight(ctrl, None)
     all_light.hass = hass
     with mock.patch.object(BleAdvKaiyuLight, "async_get_last_state", return_value=last):
         await all_light.async_added_to_hass()
-    assert ctrl.lines.count(True) == 1
+    assert ctrl.values.count(2) == 1
 
 
 async def test_kaiyu_entry(hass: HomeAssistant, coord: BleAdvCoordinator) -> None:
@@ -312,3 +312,57 @@ async def test_kaiyu_reconfigure(hass: HomeAssistant, coord: BleAdvCoordinator) 
         res = await flow.async_step_kaiyu_technical({CONF_REPEATS: 4, CONF_INTERVAL: 40})
     assert res["type"] == FlowResultType.ABORT
     assert entry.data[CONF_TECHNICAL] == {CONF_ADAPTER_IDS: ["esp/test"], CONF_REPEATS: 4, CONF_INTERVAL: 40}
+
+
+async def test_blink(hass: HomeAssistant, coord: BleAdvCoordinator) -> None:
+    """Test the blink effect (output value 3)."""
+    proxy = MockEspProxy(hass, "test")
+    await proxy.setup()
+    ctrl = _controller(coord)
+    all_light = BleAdvKaiyuLight(ctrl, None)
+    line_1 = BleAdvKaiyuLight(ctrl, 0)
+    line_2 = BleAdvKaiyuLight(ctrl, 1)
+    assert line_1.effect_list == ["steady", "blink"]
+    assert line_1.effect is None
+
+    await line_1.async_turn_on(effect="blink")
+    await coord.bt_managers[1].adapters["esp/test"].drain()
+    parsed = kaiyu_parse_adv(BleAdvAdvertisement.FromRaw(bytes.fromhex(proxy.get_adv_calls()[0]["raw"])).raw)
+    assert parsed is not None
+    assert parsed[1].values == [3] + [1] * 11
+    assert parsed[1].lines == [True] + [False] * 11
+    assert line_1.is_on
+    assert line_1.effect == "blink"
+    assert all_light.effect == "blink"
+
+    await line_1.async_turn_on()  # keeps blinking
+    assert ctrl.values[0] == 3
+    await line_2.async_turn_on()
+    assert ctrl.values[:2] == [3, 2]
+    assert all_light.effect == "steady"
+    await line_1.async_turn_on(effect="steady")
+    assert ctrl.values[0] == 2
+    await all_light.async_turn_on(effect="blink")
+    assert ctrl.values == [3] * 12
+    await coord.bt_managers[1].adapters["esp/test"].drain()
+    parsed = kaiyu_parse_adv(BleAdvAdvertisement.FromRaw(bytes.fromhex(proxy.get_adv_calls()[-1]["raw"])).raw)
+    assert parsed is not None
+    assert (parsed[1].mode, parsed[1].values) == (MODE_ALL, [3] * 12)
+
+    # Followed from the phone app
+    ctrl.on_raw_adv("esp/test", "", BleAdvAdvertisement.FromRaw(bytes.fromhex(LINE_1)))
+    assert ctrl.values == [2] + [1] * 11
+
+    # Restored
+    line_3 = BleAdvKaiyuLight(ctrl, 2)
+    line_3.hass = hass
+    last = mock.MagicMock()
+    last.state = "on"
+    last.attributes = {"effect": "blink"}
+    with mock.patch.object(BleAdvKaiyuLight, "async_get_last_state", return_value=last):
+        await line_3.async_added_to_hass()
+    assert ctrl.values[2] == 3
+    last.state = "off"
+    with mock.patch.object(BleAdvKaiyuLight, "async_get_last_state", return_value=last):
+        await line_3.async_added_to_hass()
+    assert ctrl.values[2] == 1
