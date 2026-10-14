@@ -690,7 +690,7 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_learn_test_res(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Ask if the replay worked."""
-        opts = ["learn_save", "learn_test", "learn_choose", "learn_capture_again"]
+        opts = ["learn_save", "learn_test", "learn_technical_test", "learn_choose", "learn_capture_again"]
         return self.async_show_menu(step_id="learn_test_res", menu_options=opts, description_placeholders={"key": self._learn_key_name})
 
     async def async_step_learn_save(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -702,9 +702,36 @@ class BleAdvConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_learn_menu(self, _: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Learned Remote menu."""
         keys = self._learn[CONF_KEYS]
-        opts = ["learn_key", "learn_delete", "learn_finish"] if keys else ["learn_key", "learn_abort"]
+        opts = ["learn_key", "learn_delete", "learn_technical", "learn_finish"] if keys else ["learn_key", "learn_technical", "learn_abort"]
         ph = {"keys": "\n".join(f"- {key[CONF_NAME]}" for key in keys) if keys else "-"}
         return self.async_show_menu(step_id="learn_menu", menu_options=opts, description_placeholders=ph)
+
+    async def async_step_learn_technical(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Transmission parameters of the Learned Remote, then back to the menu."""
+        return await self._async_learn_technical("learn_technical", user_input, self.async_step_learn_menu)
+
+    async def async_step_learn_technical_test(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Transmission parameters of the Learned Remote, then test the key again."""
+        return await self._async_learn_technical("learn_technical_test", user_input, self.async_step_learn_test)
+
+    async def _async_learn_technical(
+        self, step_id: str, user_input: dict[str, Any] | None, next_step: Callable[[], Awaitable[ConfigFlowResult]]
+    ) -> ConfigFlowResult:
+        tech = self._learn[CONF_TECHNICAL]
+        if user_input is not None:
+            self._learn[CONF_TECHNICAL] = {**tech, CONF_REPEATS: int(user_input[CONF_REPEATS]), CONF_INTERVAL: int(user_input[CONF_INTERVAL])}
+            return await next_step()
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_REPEATS, default=tech.get(CONF_REPEATS, LEARNED_REPEAT)): selector.NumberSelector(
+                    selector.NumberSelectorConfig(step=1, min=1, max=20, mode=selector.NumberSelectorMode.BOX)
+                ),
+                vol.Required(CONF_INTERVAL, default=tech.get(CONF_INTERVAL, LEARNED_INTERVAL)): selector.NumberSelector(
+                    selector.NumberSelectorConfig(step=10, min=10, max=150, mode=selector.NumberSelectorMode.BOX)
+                ),
+            }
+        )
+        return self.async_show_form(step_id=step_id, data_schema=data_schema)
 
     async def async_step_learn_delete(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Delete learned keys."""

@@ -40,9 +40,12 @@ class BleAdvAdapterAdvItem:
 class BleAdvQueueItem:
     """MultiQueue Item."""
 
-    def __init__(self, key: int | None, repeat: int, delay_after: int, interval: int, data: list[bytes], ign_duration: int) -> None:
-        """Init MultiQueue Item."""
+    def __init__(
+        self, key: int | None, repeat: int, delay_after: int, interval: int, data: list[bytes], ign_duration: int, split: bool = True
+    ) -> None:
+        """Init MultiQueue Item. If not split, the repeats are advertised in one single advertising session."""
         self.key: int | None = key
+        self.split: bool = split
         self.delay_after: int = delay_after
         self.data: list[bytes] = data
         self.ign_duration = ign_duration
@@ -52,7 +55,7 @@ class BleAdvQueueItem:
 
     def split_repeat(self, adapter_bunch_time: int) -> None:
         """Split the initial repeat based on adapter capacity."""
-        adapter_max_repeat = max(1, int(adapter_bunch_time / self._interval))
+        adapter_max_repeat = max(1, int(adapter_bunch_time / self._interval)) if self.split else max(1, self._repeat)
         repeats = [adapter_max_repeat] * floor(self._repeat / adapter_max_repeat)
         if (rem_repeats := self._repeat % adapter_max_repeat) > 0:
             repeats.append(rem_repeats)

@@ -329,7 +329,7 @@
       },
       "learn_choose": {
         "title": "Scegli il segnale catturato",
-        "description": "Segnali ricevuti mentre premevi **{key}**, i più ricevuti per primi (volte - protocollo - dati). Di solito il primo è quello giusto.",
+        "description": "Segnali ricevuti mentre premevi **{key}**, i più ricevuti per primi (volte ricevuto durante l'apprendimento - protocollo - dati). Di solito il primo è quello giusto. Questo numero non influisce sulla trasmissione.",
         "data": {
           "raw": "Segnale"
         }
@@ -343,6 +343,7 @@
         "menu_options": {
           "learn_save": "Sì, salva il tasto",
           "learn_test": "Ritrasmetti di nuovo",
+          "learn_technical_test": "Modifica i parametri di trasmissione e riprova",
           "learn_choose": "No, scegli un altro segnale",
           "learn_capture_again": "No, impara di nuovo il tasto"
         }
@@ -353,6 +354,7 @@
         "menu_options": {
           "learn_key": "Impara un nuovo tasto",
           "learn_delete": "Elimina tasti",
+          "learn_technical": "Parametri di trasmissione",
           "learn_finish": "Salva il telecomando",
           "learn_abort": "Annulla"
         }
@@ -361,6 +363,22 @@
         "title": "Elimina tasti",
         "data": {
           "keys": "Tasti da eliminare"
+        }
+      },
+      "learn_technical": {
+        "title": "Parametri di trasmissione",
+        "description": "Quando premi un tasto, il suo segnale viene trasmesso 'Ripetizioni' volte, uno ogni 'Intervallo' ms, in un'unica trasmissione continua (come il telecomando originale). Se il dispositivo reagisce più volte, abbassa le ripetizioni; se non reagisce sempre, alzale.",
+        "data": {
+          "repeats": "Ripetizioni",
+          "interval": "Intervallo (ms)"
+        }
+      },
+      "learn_technical_test": {
+        "title": "Parametri di trasmissione",
+        "description": "Quando premi un tasto, il suo segnale viene trasmesso 'Ripetizioni' volte, uno ogni 'Intervallo' ms, in un'unica trasmissione continua (come il telecomando originale). Se il dispositivo reagisce più volte, abbassa le ripetizioni; se non reagisce sempre, alzale.",
+        "data": {
+          "repeats": "Ripetizioni",
+          "interval": "Intervallo (ms)"
         }
       }
     },

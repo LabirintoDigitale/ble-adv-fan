@@ -329,7 +329,7 @@
       },
       "learn_choose": {
         "title": "Choose the captured advertisement",
-        "description": "Advertisements received while pressing **{key}**, most received first (count - protocol - data). The first one is usually the right one.",
+        "description": "Advertisements received while pressing **{key}**, most received first (times received during the learning - protocol - data). The first one is usually the right one. This number has no effect on the transmission.",
         "data": {
           "raw": "Advertisement"
         }
@@ -343,6 +343,7 @@
         "menu_options": {
           "learn_save": "Yes, save the key",
           "learn_test": "Replay again",
+          "learn_technical_test": "Change the transmission parameters and replay",
           "learn_choose": "No, choose another advertisement",
           "learn_capture_again": "No, learn the key again"
         }
@@ -353,6 +354,7 @@
         "menu_options": {
           "learn_key": "Learn a new key",
           "learn_delete": "Delete keys",
+          "learn_technical": "Transmission parameters",
           "learn_finish": "Save the remote",
           "learn_abort": "Abort"
         }
@@ -361,6 +363,22 @@
         "title": "Delete keys",
         "data": {
           "keys": "Keys to delete"
+        }
+      },
+      "learn_technical": {
+        "title": "Transmission parameters",
+        "description": "When a key is pressed, its signal is transmitted 'Repetitions' times, one every 'Interval' ms, in one single continuous transmission (like the original remote). If the device reacts several times, lower the repetitions; if it does not always react, raise them.",
+        "data": {
+          "repeats": "Repetitions",
+          "interval": "Interval (ms)"
+        }
+      },
+      "learn_technical_test": {
+        "title": "Transmission parameters",
+        "description": "When a key is pressed, its signal is transmitted 'Repetitions' times, one every 'Interval' ms, in one single continuous transmission (like the original remote). If the device reacts several times, lower the repetitions; if it does not always react, raise them.",
+        "data": {
+          "repeats": "Repetitions",
+          "interval": "Interval (ms)"
         }
       }
     },

@@ -79,6 +79,9 @@ async def test_split_queue() -> None:
         BleAdvAdapterAdvItem(interval=10, repeat=1, data=b"qi2", ign_duration=2),
         BleAdvAdapterAdvItem(interval=10, repeat=1, data=b"qi3", ign_duration=2),
     ]
+    qi = BleAdvQueueItem(0, 9, 0, 30, [b"qi"], 2, split=False)
+    qi.split_repeat(60)
+    assert qi._adv_items == [BleAdvAdapterAdvItem(interval=30, repeat=9, data=b"qi", ign_duration=2)]
     qi = BleAdvQueueItem(0, 10, 0, 100, [b"qi1", b"qi2", b"qi3"], 2)
     qi.split_repeat(60)
     assert qi._adv_items == [

@@ -8,7 +8,17 @@ from unittest import mock
 
 from ble_adv_fan.codecs.models import BleAdvAdvertisement
 from ble_adv_fan.config_flow import BleAdvConfigFlow, BleAdvLearnProgress
-from ble_adv_fan.const import CONF_ADAPTER_IDS, CONF_ENTRY_TYPE, CONF_KEY_ID, CONF_KEYS, CONF_RAW, CONF_TECHNICAL, ENTRY_TYPE_LEARNED
+from ble_adv_fan.const import (
+    CONF_ADAPTER_IDS,
+    CONF_ENTRY_TYPE,
+    CONF_INTERVAL,
+    CONF_KEY_ID,
+    CONF_KEYS,
+    CONF_RAW,
+    CONF_REPEATS,
+    CONF_TECHNICAL,
+    ENTRY_TYPE_LEARNED,
+)
 from ble_adv_fan.coordinator import BleAdvCoordinator
 from ble_adv_fan.presence import BleAdvPresenceTracker
 from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigFlowResult
@@ -116,9 +126,23 @@ async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> None
     res = await flow.async_step_learn_test_res()
     assert res["menu_options"][0] == "learn_save"
 
+    # Change the transmission parameters and replay: one single transmission
+    res = await flow.async_step_learn_technical_test()
+    assert res["step_id"] == "learn_technical_test"
+    res = await flow.async_step_learn_technical_test({CONF_REPEATS: 3.0, CONF_INTERVAL: 20.0})
+    assert res["type"] == FlowResultType.SHOW_PROGRESS
+    res = await _wait_done(flow.async_step_learn_test)
+    assert res["step_id"] == "learn_test_res"
+    await coord.bt_managers[1].adapters["esp/test"].drain()
+    assert len(proxy.get_adv_calls()) == 1
+    res = await flow.async_step_learn_technical()
+    assert res["step_id"] == "learn_technical"
+    res = await flow.async_step_learn_technical({CONF_REPEATS: 4, CONF_INTERVAL: 30})
+    assert res["step_id"] == "learn_menu"
+
     res = await flow.async_step_learn_save()
     assert res["step_id"] == "learn_menu"
-    assert res["menu_options"] == ["learn_key", "learn_delete", "learn_finish"]
+    assert res["menu_options"] == ["learn_key", "learn_delete", "learn_technical", "learn_finish"]
     assert res["description_placeholders"] == {"keys": "- On"}
     res = await flow.async_step_learn_key({CONF_NAME: "On"})
     assert res["errors"] == {CONF_NAME: "duplicate_key_name"}
@@ -128,7 +152,7 @@ async def test_learn_flow(hass: HomeAssistant, coord: BleAdvCoordinator) -> None
     assert res["title"] == "Remote"
     data = res["data"]
     assert data[CONF_ENTRY_TYPE] == ENTRY_TYPE_LEARNED
-    assert data[CONF_TECHNICAL][CONF_ADAPTER_IDS] == ["esp/test"]
+    assert data[CONF_TECHNICAL] == {CONF_ADAPTER_IDS: ["esp/test"], CONF_REPEATS: 4, CONF_INTERVAL: 30}
     assert [(key[CONF_NAME], key[CONF_RAW]) for key in data[CONF_KEYS]] == [("On", KEY.to_raw().hex().upper())]
     assert flow.unique_id is not None
     assert flow.unique_id.startswith("learned##")
@@ -141,7 +165,7 @@ async def test_learn_flow_delete_abort(hass: HomeAssistant, coord: BleAdvCoordin
     res = await flow.async_step_learn_delete()
     assert res["step_id"] == "learn_delete"
     res = await flow.async_step_learn_delete({CONF_KEYS: ["k1"]})
-    assert res["menu_options"] == ["learn_key", "learn_abort"]
+    assert res["menu_options"] == ["learn_key", "learn_technical", "learn_abort"]
     assert res["description_placeholders"] == {"keys": "-"}
     res = await flow.async_step_learn_abort()
     assert res["reason"] == "no_keys"

@@ -25,9 +25,9 @@ KEY_RX_GAP = timedelta(seconds=1)  # Advs of the same key received with less tha
 
 
 async def async_send_raw(coordinator: BleAdvCoordinator, adapter_ids: list[str], queue_id: str, raw: bytes, repeat: int, interval: int) -> None:
-    """Advertise a raw BLE ADV on the given adapters."""
+    """Advertise a raw BLE ADV on the given adapters, in one single advertising session as some devices act on each session."""
     for adapter_id in adapter_ids:
-        qi = BleAdvQueueItem(None, repeat, LEARNED_DURATION, interval, [raw], 4 * repeat * interval)
+        qi = BleAdvQueueItem(None, repeat, LEARNED_DURATION, interval, [raw], 4 * repeat * interval, split=False)
         await coordinator.advertise(adapter_id, queue_id, qi)
 
 
