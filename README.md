@@ -1,114 +1,106 @@
-# <img width="64" height="64" alt="icon@2x" src="https://github.com/user-attachments/assets/29025370-fa25-41a1-ad18-5ca567dbf120" />  Home Assistant BLE ADV Fan
+<p align="center">
+  <img src="docs/images/logo.png" width="200" alt="BLE AMPI">
+</p>
+
+<h1 align="center">BLE AMPI</h1>
+<p align="center"><b>ADV Multi Purpose Integration</b> per Home Assistant</p>
+
+<p align="center">
+  <a href="https://github.com/LabirintoDigitale/ble-adv-fan/releases/"><img src="https://img.shields.io/github/v/release/LabirintoDigitale/ble-adv-fan.svg" alt="Release"></a>
+  <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
+</p>
 
 > **BLE ADV Fan** è un'integrazione di [LabirintoDigitale](https://github.com/LabirintoDigitale) basata su [NicoIIT/ha-ble-adv](https://github.com/NicoIIT/ha-ble-adv) (licenza MIT, grazie a NicoIIT). Usa il dominio `ble_adv_fan`, quindi può essere installata accanto all'integrazione originale `ble_adv`.
 
-[![GitHub release](https://img.shields.io/github/v/release/LabirintoDigitale/ble-adv-fan.svg)](https://github.com/LabirintoDigitale/ble-adv-fan/releases/)
-![Usage](https://img.shields.io/badge/dynamic/json?color=9932CC&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ble_adv_fan.total)
+## Cos'è
 
-Home Assistant Custom Integration to control Ceiling Fan / Lamp Devices from various Brands using _non standard_ **_BLE Raw Advertising_** as communication method. Please note this component will **_never_** support standard BLE GATT protocol as it is not its purpose.
+Molti dispositivi economici non si "collegano" via Bluetooth: il telecomando o l'app **trasmettono il comando nell'aria** (BLE Advertising, "ADV") e il dispositivo lo ascolta, come un telecomando a infrarossi ma via radio. È il caso di ventilatori da soffitto, lampade, plafoniere, strisce LED, mattoncini luminosi, prese e tanto altro.
 
-This integration **is not limited to any specific device type or brand**: it is able to recognize and reproduce the communication protocols used by various [Phone Apps](#supported-ceiling-fans--lamps-protocols) and Remotes.
+**BLE AMPI** porta tutti questi dispositivi in Home Assistant: non solo i ventilatori, ma **qualsiasi dispositivo comandato via BLE Advertising**. Riconosce i protocolli che conosce, impara i comandi di quelli che non conosce e ti permette di sperimentare con quelli nuovi.
 
-## Features
-* Discover your device configuration simply by listening to an already paired controller (Android Phone App, Physical Remote)
-* Create Home Assistant Fan / Light Entities using existing Home Assistant UI to control them
-* Listen to the command emitted by the Phone App and updates Home Assistant Entities state
-* Synchronize another controller: allows to have a Phone App and a remote both updating Home Assistant entities state
-* Guided configuration fully based on Home Assistant User Interface configuration flow
-* Use either the bluetooth of the HomeAssistant host, an ESPHome based [ble_adv_proxy](https://github.com/NicoIIT/esphome-ble_adv_proxy) similar to the ESPHome `bluetooth_proxy` but supporting _BLE Raw Advertising_ or a Shelly device supporting HA Bluetooth Proxy.
+| | Cosa puoi fare |
+|---|---|
+| 🌀 **Ventilatori e lampade** | Ventilatori da soffitto, plafoniere e lampade di decine di marche, con velocità, direzione, luci bianche e RGB |
+| 🧱 **Mattoncino luci LEGO Kaiyu** | Le 12 uscite LED del controller compatibile LEGO come 12 luci indipendenti, con effetto lampeggio |
+| 🎮 **Telecomando universale BLE** | Impara i tasti di qualsiasi telecomando o app BLE ADV e li trasforma in pulsanti ed eventi di Home Assistant |
+| 📡 **Dispositivi Bluetooth presenti** | L'elenco dei dispositivi Bluetooth intorno a te presenti da almeno un'ora |
+| 🧪 **Strumenti per sperimentare** | Ascolto e decodifica dei pacchetti, invio di pacchetti grezzi e di comandi di prova |
 
-## Requirements
-* Your Home Assistant must _either_:
-  * Be on a LINUX host, on a Standard HA Install (HAOS) and have a Bluetooth Adapter directly accessible on the Host (internal or via USB and not using a VM layer) and (even if not strictly necessary) discovered by the [Bluetooth Integration](https://www.home-assistant.io/integrations/bluetooth/). For **advanced** users that defined their own HA docker container (non root or non 'host' network), a solution is available [here](https://github.com/NicoIIT/ha-ble-adv/wiki/Workaround-for-HA-non-'network_mode:-host'-or-non-root-installations).
-  * Have one or several ESPHome [ble_adv_proxy](https://github.com/NicoIIT/esphome-ble_adv_proxy) linked to your Home Assistant instance. If you already have some [bluetooth_proxy](https://esphome.io/components/bluetooth_proxy/) they can easily be extended to `ble_adv_proxy`.
-  * Have one or several standard **Shelly Bluetooth Proxy** linked to your Home Assistant instance, with internal firmware version at least v2.0.0 and with [Bluetooth Scanner](https://www.home-assistant.io/integrations/shelly/#options) mode Enabled and working OK.
-* Your device can be reached by Bluetooth from the Home Assistant Host / `ble_adv_proxy` / Shelly Bluetooth Proxy.
-* Have an up-to-date Home Assistant Core and HACS, see minimum versions [here](hacs.json)
+## 🌀 Ventilatori da soffitto e lampade
 
-## Supported Ceiling Fans / Lamps Protocols
-The Protocols supported are the ones used by the following Android Phone Apps (and iOS for most of them):
+Il cuore dell'integrazione originale: controlla i dispositivi che usano i protocolli di queste app (Android e quasi sempre iOS):
 
-* [LampSmart Pro](https://play.google.com/store/apps/details?id=com.jingyuan.lamp)
-* [FanLamp Pro](https://play.google.com/store/apps/details?id=com.jingyuan.fan_lamp)
-* [ApplianceSmart](https://play.google.com/store/apps/details?id=com.jingyuan.smart_home)
-* [Vmax smart](https://play.google.com/store/apps/details?id=com.jingyuan.vmax_smart)
-* [Zhi Jia](https://play.google.com/store/apps/details?id=com.cxw.cxwblelight)
-* [Zhi Guang](https://play.google.com/store/apps/details?id=com.cxw.zhiguang) (2 different versions: one based on zhimei, one based on zhijia)
-* [Zhi Mei Deng Kong](http://mihuan.iotworkshop.com/zhiguang/) (not available on Play Store)
-* [Mantra Lighting](https://play.google.com/store/apps/details?id=com.newenergy.baolilan) (Models Coin, Groenland. No support for direct Pairing)
-* [Smart Light / Argrace Smart](https://apkpure.com/argrace-smart/ai.argrace.oem) (No RGB, Only the control by device, not the Master Control, PARTIAL support for some remotes) (not available on Play Store anymore, seems abandoned)
-* [LE Light Pro / 乐智光Pro](https://openapi.lelight.top/dl/cqan) (not available on Play Store)
-* [RuiXin](https://rx-etech.com/rxzn.html) Sanweyter devices (No RGB, no Timer, Remote Temperature Switch not reflected in HA) (not available on Play Store)
-* [RW.LIGHT](https://play.google.com/store/apps/details?id=com.rw.rwblelight) (No control by Group, No support for AURA / IR / FIBER types)
-* [Smart Elfin](https://play.google.com/store/apps/details?id=com.warpfuture.wfiot.g)
-* [GMIMA](https://www.jasonghost.com/lampSmartGmima/) (not available on Play Store)
-* [SmartHomeLight](https://wosk.top/zd.html) (not available on Play Store)
-* [Dudugu](https://app.dudugu.com/duduguapp/app/) (not available on Play Store. FAN only Device. No support for direct Pairing)
-* [eWeLink](https://play.google.com/store/apps/details?id=com.coolkit) ONLY BLE ADV devices such as [VACZON](https://github.com/NicoIIT/ha-ble-adv/issues/201) !!! Will **_NEVER_** work for Standard BLE GATT devices (99% of eWeLink Devices) so ensure the Device is [BLE ADV Controlled](https://github.com/NicoIIT/ha-ble-adv/wiki/How-to-know-if-my-Physical-Remote-is-using-BLE-Advertising-to-control-my-device) BEFORE opening an issue.
-* [Hxlight](https://play.google.com/store/apps/details?id=com.dxc.delight) / [LED-Spots](https://play.google.com/store/apps/details?id=com.hmwin.bt.broadcast) (On / Off, Brightness, Color Temperature and Night Mode. No support for direct Pairing)
-* Other (Legacy), removed app from play store: 'FanLamp', 'ControlSwitch', 'Lamp Smart Pro - Soft Lighting / Smart Lighting'
+* [LampSmart Pro](https://play.google.com/store/apps/details?id=com.jingyuan.lamp), [FanLamp Pro](https://play.google.com/store/apps/details?id=com.jingyuan.fan_lamp), [ApplianceSmart](https://play.google.com/store/apps/details?id=com.jingyuan.smart_home), [Vmax smart](https://play.google.com/store/apps/details?id=com.jingyuan.vmax_smart)
+* [Zhi Jia](https://play.google.com/store/apps/details?id=com.cxw.cxwblelight), [Zhi Guang](https://play.google.com/store/apps/details?id=com.cxw.zhiguang), [Zhi Mei Deng Kong](http://mihuan.iotworkshop.com/zhiguang/)
+* [Mantra Lighting](https://play.google.com/store/apps/details?id=com.newenergy.baolilan), [Smart Light / Argrace Smart](https://apkpure.com/argrace-smart/ai.argrace.oem), [LE Light Pro / 乐智光Pro](https://openapi.lelight.top/dl/cqan)
+* [RuiXin](https://rx-etech.com/rxzn.html), [RW.LIGHT](https://play.google.com/store/apps/details?id=com.rw.rwblelight), [Smart Elfin](https://play.google.com/store/apps/details?id=com.warpfuture.wfiot.g), [GMIMA](https://www.jasonghost.com/lampSmartGmima/), [SmartHomeLight](https://wosk.top/zd.html)
+* [Dudugu](https://app.dudugu.com/duduguapp/app/) (solo ventilatori), [eWeLink](https://play.google.com/store/apps/details?id=com.coolkit) (solo i dispositivi BLE ADV), [Hxlight](https://play.google.com/store/apps/details?id=com.dxc.delight) / [LED-Spots](https://play.google.com/store/apps/details?id=com.hmwin.bt.broadcast)
+* e molti telecomandi fisici che usano gli stessi protocolli.
 
-If the protocols of your application are not supported yet you can request for their support [here](https://github.com/NicoIIT/ha-ble-adv/issues/new?template=new_app.yml).
+**Come si aggiunge:** Aggiungi integrazione → **BLE AMPI** → **Copia la configurazione dell'app già abbinata** (premi un tasto nell'app o sul telecomando e l'integrazione lo riconosce) oppure **Abbinamento**. Poi scegli le entità da creare: luci (bianco caldo/freddo, RGB, on/off) e ventilatori (3, 4, 6, 8 o 100 velocità, direzione, oscillazione, modalità notte e vento naturale).
 
-## Supported Physical Remote
-There are lots of different Physical Remote so it is impossible to know if a Physical Remote is supported without testing it. Some of them are using the same protocols than the Phone Apps, others are using their own protocol, or even RF or IR...
+> 💡 Se a volte la luce non si spegne, attiva **"Comandi inviati sempre, anche se lo stato non cambia"** per *Spegni* nella configurazione della luce (Riconfigura → Configura luci / ventilatori).
 
-If your remote is not recognized by the integration then you can check if it could be supported and request for its support, see [How To](https://github.com/NicoIIT/ha-ble-adv/wiki/How-to-know-if-my-Physical-Remote-is-using-BLE-Advertising-to-control-my-device).
+## 🧱 Mattoncino luci LEGO Kaiyu (12 uscite)
 
-## Installing the component
-Download and install directly through [HACS (Home Assistant Community Store)](https://www.hacs.xyz/) following the [my-link](https://my.home-assistant.io/) link:
+Il controller luci compatibile LEGO **Kaiyu** (12 uscite LED in 3 file da 4, alimentato dal box batterie o via USB, app "Kaiyu") diventa in Home Assistant:
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=LabirintoDigitale&repository=ble-adv-fan)
+* **12 luci**, "Linea 1" … "Linea 12", una per uscita, accendibili e spegnibili in modo **indipendente**;
+* una luce **"Tutte le linee"**;
+* l'effetto **Lampeggio** (veloce, eseguito dal controller) oltre a **Fisso**;
+* lo stato segue anche i comandi dell'app Kaiyu.
 
-Once the repository is added, you need to restart Home Assistant so that it could be taken into account.
+**Come si aggiunge:** Aggiungi integrazione → **BLE AMPI** → **Controller luci LEGO Kaiyu (12 uscite)**, poi accendi o spegni una luce dall'app Kaiyu entro 15 secondi: il controller viene riconosciuto da solo.
 
-## Adding Integrations
-Once the component is installed, you can now [add](https://www.home-assistant.io/getting-started/integration/) a **"BLE ADV Fan"** integration for each of the Devices you want to control.
+> ⚠️ Tieni **chiusa l'app Kaiyu** quando usi Home Assistant: mentre è aperta ritrasmette di continuo il suo stato e sovrascrive i comandi.
 
-The configuration flow will listen to the commands emitted by your phone / physical remote and/or try to control your device (make the lamp blink) so you have to be **located in the same room than the device** in order to be sure:
-* a bluetooth adapter is able to listen to the commands from where they will be used.
-* the same bluetooth adapter is able to control your device
-* you can check if the lamp blinked
+Il protocollo è stato decodificato per questa integrazione: sbiancamento BLE dei mattoncini Mould King (port di [MouldKingCrypt](https://github.com/J0EK3R/mkconnect-python), MIT) più la codifica dell'app, con lo stato di tutte le 12 uscite in ogni comando. Luminosità ed effetti del pulsante fisico del controller non passano via Bluetooth.
 
-The main steps of the configuration flow are the following:
-* **Configuration discovery**, with 2 ways to proceed:
-  * **The recommended way - Duplicate Config**: Press on a button on your Phone App (OR Physical Remote) already paired and controlling your device, the configuration process will automatically detect the potential configurations.
-  * **Pairing**: if you do not have a controller already paired controlling your device, the process will try to pair with your device
-* **Validation**: Find the first of the potential configurations discovered / entered that can control the lamp by trying to make it blink
-* **Definition**: Define the **Entities** to be created (Main Light, Second Light, Fan, ...) and their characteristics (RGB / Cold White Warm / Binary / Fan Speed / Min Brightness...), add a supplementary remote controller or modify the technical parameters. This step can be modified afterwards by reconfiguring the integration (see [Wiki](https://github.com/NicoIIT/ha-ble-adv/wiki/Configuration-Guide)).
-* **Finalization**: Specify the name of the Device and save your changes.
+## 🎮 Telecomando universale BLE
 
+Impara i tasti di **qualsiasi** telecomando o app BLE Advertising, anche se il suo protocollo non è supportato:
 
-## Telecomando universale BLE (solo BLE ADV Fan)
-Impara i tasti di **qualsiasi** telecomando o app che usa BLE Advertising, anche se il suo protocollo non è supportato:
+1. Aggiungi integrazione → **BLE AMPI** → **Telecomando universale BLE**, dai un nome e scegli gli adattatori.
+2. Per ogni tasto: dai un nome, premi **Invia**, **non premere nulla per 3 secondi** (analisi del rumore di fondo), poi premi più volte il tasto sul telecomando.
+3. Scegli il segnale catturato (di solito il primo), verifica che il dispositivo reagisca e salva.
 
-1. Aggiungi l'integrazione **BLE ADV Fan** e scegli **Telecomando universale BLE**, dai un nome al telecomando e scegli gli adattatori.
-2. Per ogni tasto: dai un nome, premi **Invia**, **non premere nulla per 3 secondi** (analisi del rumore Bluetooth di fondo), poi premi più volte il tasto sul telecomando.
-3. Scegli il segnale catturato (di solito il primo), verifica che il dispositivo reagisca alla ritrasmissione e salva.
+Ogni tasto diventa un **pulsante** di Home Assistant, e l'entità evento **"Tasto ricevuto"** scatta quando usi il telecomando originale. Il segnale viene trasmesso in un'unica trasmissione continua; ripetizioni e intervallo si regolano in **Parametri di trasmissione**.
 
-Per ogni telecomando vengono creati:
-* un'entità **pulsante** per ogni tasto, che ritrasmette il segnale appreso;
-* un'entità **evento** "Tasto ricevuto", che scatta quando usi il telecomando originale (utile nelle automazioni).
+> Non funziona con i dispositivi che richiedono una connessione Bluetooth (GATT). I telecomandi con codice variabile (rolling code) possono rifiutare un segnale ripetuto.
 
-I tasti si aggiungono o eliminano in seguito con **Riconfigura**.
+## 📡 Dispositivi Bluetooth presenti da almeno 1 ora
 
-Limiti: funziona solo con dispositivi controllati via BLE Advertising (non con quelli che richiedono una connessione Bluetooth). I telecomandi con codice variabile (rolling code) possono rifiutare un segnale ripetuto. Con un proxy ESPHome, lo stesso segnale ripetuto entro `ignored_duration` (60 s di default) può non essere inoltrato a Home Assistant: aspetta un minuto tra due catture dello stesso tasto.
+In **Aggiungi integrazione → BLE AMPI → Strumenti → Dispositivi Bluetooth presenti da almeno 1 ora** trovi i dispositivi Bluetooth presenti da più di un'ora che continuano a mandare un segnale ogni tanto: MAC, nome, RSSI, da quanto sono presenti, ultimo segnale, numero di segnali e adattatore che li ha ricevuti. Un dispositivo silenzioso per più di un'ora è considerato andato via. I dati arrivano dagli adattatori BLE ADV e dall'integrazione Bluetooth di Home Assistant.
 
-## Dispositivi Bluetooth presenti da almeno 1 ora (solo BLE ADV Fan)
-In **Aggiungi integrazione → BLE ADV Fan → Strumenti → Dispositivi Bluetooth presenti da almeno 1 ora** trovi l'elenco dei dispositivi Bluetooth presenti da più di un'ora che continuano a mandare un segnale ogni tanto: tra il primo e l'ultimo segnale ricevuto è passata almeno un'ora. Per ognuno vedi MAC, nome, RSSI, da quanto è presente, quando è arrivato l'ultimo segnale, quanti segnali sono arrivati e quale adattatore lo ha ricevuto.
+## 🧪 Strumenti per sperimentare
 
-Un dispositivo resta in elenco finché non sta in silenzio per più di un'ora; dopo, è considerato andato via e il conteggio riparte al segnale successivo. I dispositivi che cambiano indirizzo di continuo, come i telefoni, non compaiono.
+* **Strumenti → Ascolta BLE ADV**: mostra per 10 secondi i pacchetti ricevuti, già decodificati quando il protocollo è noto.
+* **Strumenti → Dump diagnostico**: scarica i pacchetti ricevuti e lo stato dell'integrazione.
+* Servizio **`ble_adv_fan.inject_raw`**: trasmette un pacchetto grezzo.
+* Servizio **`ble_adv_fan.send_command`**: manda a un dispositivo un comando (comando, parametro, argomenti) con il suo protocollo e il suo ID; accetta valori variabili, per provare comandi sconosciuti da uno script.
 
-I dati arrivano dagli adattatori BLE ADV e, se presente, dall'integrazione Bluetooth di Home Assistant (letta anche ogni 5 minuti). Il monitoraggio parte all'avvio di Home Assistant: dopo un riavvio serve un'ora prima che i dispositivi compaiano.
+## Requisiti
 
-## Future Developments
-Future developments are tracked in [github feature requests](https://github.com/NicoIIT/ha-ble-adv/issues?q=is%3Aissue%20state%3Aopen%20label%3Aenhancement), do not hesitate to vote for them if you need them giving it a :thumbsup:, or open new ones!
+Home Assistant deve poter trasmettere BLE Advertising con almeno uno di questi:
 
-## More Info on Wiki
-* [How it is working](https://github.com/NicoIIT/ha-ble-adv/wiki/How-it-is-working)
-* [Configuration Guide](https://github.com/NicoIIT/ha-ble-adv/wiki/Configuration-Guide)
-* [Troubleshooting Guide](https://github.com/NicoIIT/ha-ble-adv/wiki/Troubleshooting-Guide)
-* [Advanced Customization Guide](https://github.com/NicoIIT/ha-ble-adv/wiki/Customization-Guide)
-* [Contributing Guide](CONTRIBUTING.md)
+* un **adattatore Bluetooth** collegato direttamente all'host (Home Assistant OS su Linux, senza macchina virtuale in mezzo);
+* uno o più proxy **ESPHome [ble_adv_proxy](https://github.com/NicoIIT/esphome-ble_adv_proxy)** (un normale `bluetooth_proxy` si estende facilmente);
+* uno o più **Shelly** con proxy Bluetooth (firmware 2.0.0 o successivo, modalità scanner attiva).
 
+Il dispositivo deve essere raggiungibile dal Bluetooth dell'adattatore o del proxy.
 
+## Installazione
+
+Tramite [HACS](https://www.hacs.xyz/):
+
+[![Apri il repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=LabirintoDigitale&repository=ble-adv-fan)
+
+HACS → ⋮ → Repository personalizzati → `https://github.com/LabirintoDigitale/ble-adv-fan` (categoria Integrazione) → Scarica → riavvia Home Assistant → Aggiungi integrazione **BLE AMPI**.
+
+## Crediti
+
+* [NicoIIT/ha-ble-adv](https://github.com/NicoIIT/ha-ble-adv): l'integrazione originale e tutti i protocolli di ventilatori e lampade (MIT).
+* [J0EK3R/mkconnect-python](https://github.com/J0EK3R/mkconnect-python): lo sbiancamento BLE dei mattoncini Mould King (MIT).
+* [LabirintoDigitale](https://github.com/LabirintoDigitale): telecomando universale, controller LEGO Kaiyu, dispositivi presenti, strumenti.
+
+Licenza [MIT](LICENSE).

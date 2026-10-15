@@ -1,6 +1,6 @@
 {
   "domain": "ble_adv_fan",
-  "name": "BLE ADV Fan",
+  "name": "BLE AMPI (ADV Multi Purpose Integration)",
   "after_dependencies": [
     "bluetooth",
     "esphome",
