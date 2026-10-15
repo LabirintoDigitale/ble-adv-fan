@@ -6,7 +6,7 @@
 <p align="center"><b>ADV Multi Purpose Integration</b> per Home Assistant</p>
 
 <p align="center">
-  <a href="https://github.com/LabirintoDigitale/ble-adv-fan/releases/"><img src="https://img.shields.io/github/v/release/LabirintoDigitale/ble-adv-fan.svg" alt="Release"></a>
+  <a href="https://github.com/LabirintoDigitale/ble-ampi/releases/"><img src="https://img.shields.io/github/v/release/LabirintoDigitale/ble-ampi.svg" alt="Release"></a>
   <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
 </p>
 
@@ -93,9 +93,9 @@ Il dispositivo deve essere raggiungibile dal Bluetooth dell'adattatore o del pro
 
 Tramite [HACS](https://www.hacs.xyz/):
 
-[![Apri il repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=LabirintoDigitale&repository=ble-adv-fan)
+[![Apri il repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=LabirintoDigitale&repository=ble-ampi)
 
-HACS → ⋮ → Repository personalizzati → `https://github.com/LabirintoDigitale/ble-adv-fan` (categoria Integrazione) → Scarica → riavvia Home Assistant → Aggiungi integrazione **BLE AMPI**.
+HACS → ⋮ → Repository personalizzati → `https://github.com/LabirintoDigitale/ble-ampi` (categoria Integrazione) → Scarica → riavvia Home Assistant → Aggiungi integrazione **BLE AMPI**.
 
 ## Crediti
 

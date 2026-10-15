@@ -10,10 +10,10 @@
     "@LabirintoDigitale"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/LabirintoDigitale/ble-adv-fan",
+  "documentation": "https://github.com/LabirintoDigitale/ble-ampi",
   "integration_type": "device",
   "iot_class": "assumed_state",
-  "issue_tracker": "https://github.com/LabirintoDigitale/ble-adv-fan/issues",
+  "issue_tracker": "https://github.com/LabirintoDigitale/ble-ampi/issues",
   "requirements": [
     "pycryptodome",
     "btsocket",
