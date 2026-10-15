@@ -10,7 +10,7 @@
   <a href="https://hacs.xyz"><img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS"></a>
 </p>
 
-> **BLE ADV Fan** è un'integrazione di [LabirintoDigitale](https://github.com/LabirintoDigitale) basata su [NicoIIT/ha-ble-adv](https://github.com/NicoIIT/ha-ble-adv) (licenza MIT, grazie a NicoIIT).
+> **BLE AMPI** è un'integrazione di [LabirintoDigitale](https://github.com/LabirintoDigitale) basata su [NicoIIT/ha-ble-adv](https://github.com/NicoIIT/ha-ble-adv) (licenza MIT, grazie a NicoIIT).
 
 ## Cos'è
 
