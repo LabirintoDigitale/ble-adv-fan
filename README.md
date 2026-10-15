@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/logo.png" width="200" alt="BLE AMPI">
+  <img src="https://raw.githubusercontent.com/LabirintoDigitale/ble-ampi/main/docs/images/logo.png" width="200" alt="BLE AMPI">
 </p>
 
 <h1 align="center">BLE AMPI</h1>
